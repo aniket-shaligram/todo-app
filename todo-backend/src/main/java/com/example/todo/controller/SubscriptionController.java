@@ -4,7 +4,6 @@ import com.example.todo.model.Subscription;
 import com.example.todo.model.User;
 import com.example.todo.service.UserService;
 import com.example.todo.repository.UserRepository;
-import lombok.Data;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -55,30 +54,5 @@ public class SubscriptionController {
             subscription.getEndDate(),
             subscription.isActive()
         ));
-    }
-}
-
-@Data
-class UpgradeRequest {
-    private Subscription.SubscriptionTier tier;
-}
-
-@Data
-class SubscriptionStatus {
-    private Subscription.SubscriptionTier tier;
-    private java.time.LocalDateTime startDate;
-    private java.time.LocalDateTime endDate;
-    private boolean active;
-
-    public SubscriptionStatus(
-        Subscription.SubscriptionTier tier,
-        java.time.LocalDateTime startDate,
-        java.time.LocalDateTime endDate,
-        boolean active
-    ) {
-        this.tier = tier;
-        this.startDate = startDate;
-        this.endDate = endDate;
-        this.active = active;
     }
 }

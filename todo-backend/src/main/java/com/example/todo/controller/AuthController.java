@@ -3,7 +3,6 @@ package com.example.todo.controller;
 import com.example.todo.model.User;
 import com.example.todo.service.UserService;
 import com.example.todo.security.JwtService;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -67,36 +66,5 @@ public class AuthController {
             log.error("Login failed for user: " + request.getEmail(), e);
             return ResponseEntity.status(500).body(new ErrorResponse(e.getMessage()));
         }
-    }
-}
-
-@Data
-class RegisterRequest {
-    private String email;
-    private String password;
-    private String name;
-}
-
-@Data
-class LoginRequest {
-    private String email;
-    private String password;
-}
-
-@Data
-class AuthResponse {
-    private String token;
-
-    public AuthResponse(String token) {
-        this.token = token;
-    }
-}
-
-@Data
-class ErrorResponse {
-    private String message;
-
-    public ErrorResponse(String message) {
-        this.message = message;
     }
 }
