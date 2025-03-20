@@ -11,8 +11,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/subscription")
-@CrossOrigin(origins = "http://localhost:3000")
+@RequestMapping("/subscription")
+@CrossOrigin(origins = "${app.cors.allowed-origins}")
 public class SubscriptionController {
 
     private final UserService userService;

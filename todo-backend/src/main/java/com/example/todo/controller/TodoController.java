@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/todos")
-@CrossOrigin(origins = "http://localhost:3000")
+@RequestMapping("/todos")
+@CrossOrigin(origins = "${app.cors.allowed-origins}")
 public class TodoController {
 
     private final TodoRepository todoRepository;

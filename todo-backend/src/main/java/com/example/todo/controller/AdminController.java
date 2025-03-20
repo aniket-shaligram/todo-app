@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/admin")
-@CrossOrigin(origins = "http://localhost:3000")
+@RequestMapping("/admin")
+@CrossOrigin(origins = "${app.cors.allowed-origins}")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
@@ -102,8 +102,7 @@ class TenantResponse {
     private Subscription.SubscriptionTier subscriptionTier;
     private boolean active;
 
-    public TenantResponse(Long id, String email, String name, 
-                         Subscription.SubscriptionTier subscriptionTier, boolean active) {
+    public TenantResponse(Long id, String email, String name, Subscription.SubscriptionTier subscriptionTier, boolean active) {
         this.id = id;
         this.email = email;
         this.name = name;
