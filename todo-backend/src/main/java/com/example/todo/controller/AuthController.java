@@ -1,8 +1,10 @@
 package com.example.todo.controller;
 
 import com.example.todo.model.User;
-import com.example.todo.service.UserService;
+import com.example.todo.request.LoginRequest;
+import com.example.todo.request.RegisterRequest;
 import com.example.todo.security.JwtService;
+import com.example.todo.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;

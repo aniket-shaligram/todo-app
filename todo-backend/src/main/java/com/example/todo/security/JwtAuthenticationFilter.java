@@ -79,7 +79,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private boolean shouldSkipFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return path.startsWith("/api/auth/login") || path.startsWith("/api/auth/register");
+        return path.startsWith("/auth/login") || 
+               path.startsWith("/auth/register") || 
+               path.equals("/error") ||
+               request.getMethod().equals("OPTIONS");
     }
 
     private String getJwtFromRequest(HttpServletRequest request) {
