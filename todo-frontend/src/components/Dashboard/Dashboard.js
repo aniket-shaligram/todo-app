@@ -13,12 +13,18 @@ import {
   FormControlLabel,
   Radio,
   FormControl,
-  FormLabel
+  FormLabel,
+  Checkbox,
+  Menu,
+  MenuItem,
+  Tooltip
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import AddIcon from '@mui/icons-material/Add';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
 import { config } from '../../config';
 import './Dashboard.css';
@@ -35,6 +41,9 @@ const Dashboard = ({ onLogout }) => {
     imageUrl: '' 
   });
   const [loading, setLoading] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   
   const calculateTaskStats = () => {
     const total = tasks.length;
@@ -119,6 +128,71 @@ const Dashboard = ({ onLogout }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleToggleComplete = async (task) => {
+    try {
+      const token = localStorage.getItem(config.AUTH_TOKEN_KEY);
+      if (!token) {
+        console.error('No auth token found');
+        onLogout();
+        return;
+      }
+
+      const response = await axios.put(`${config.TODOS_URL}/${task.id}`, {
+        ...task,
+        completed: !task.completed
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      setTasks(tasks.map(t => t.id === task.id ? response.data : t));
+    } catch (error) {
+      console.error('Failed to update task:', error);
+      if (error.response?.status === 403) {
+        onLogout();
+      }
+    }
+  };
+
+  const handleDeleteTask = async () => {
+    if (!selectedTask) return;
+
+    try {
+      const token = localStorage.getItem(config.AUTH_TOKEN_KEY);
+      if (!token) {
+        console.error('No auth token found');
+        onLogout();
+        return;
+      }
+
+      await axios.delete(`${config.TODOS_URL}/${selectedTask.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      setTasks(tasks.filter(t => t.id !== selectedTask.id));
+      setOpenDeleteDialog(false);
+      setSelectedTask(null);
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      if (error.response?.status === 403) {
+        onLogout();
+      }
+    }
+  };
+
+  const handleMenuOpen = (event, task) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedTask(task);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
   };
 
   const getPriorityColor = (priority) => {
@@ -213,16 +287,32 @@ const Dashboard = ({ onLogout }) => {
                 }}
               >
                 <Box className="task-info">
-                  <Typography 
-                    variant="subtitle1"
-                    sx={{ 
-                      textDecoration: task.completed ? 'line-through' : 'none'
-                    }}
-                  >
-                    {task.title}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Checkbox
+                      checked={task.completed}
+                      onChange={() => handleToggleComplete(task)}
+                      color="primary"
+                    />
+                    <Typography 
+                      variant="subtitle1"
+                      sx={{ 
+                        textDecoration: task.completed ? 'line-through' : 'none',
+                        flex: 1
+                      }}
+                    >
+                      {task.title}
+                    </Typography>
+                    <Tooltip title="Task actions">
+                      <IconButton
+                        size="small"
+                        onClick={(e) => handleMenuOpen(e, task)}
+                      >
+                        <MoreVertIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
                   {task.description && (
-                    <Typography variant="body2" color="textSecondary">
+                    <Typography variant="body2" color="textSecondary" sx={{ ml: 4 }}>
                       {task.description}
                     </Typography>
                   )}
@@ -230,21 +320,23 @@ const Dashboard = ({ onLogout }) => {
                     <Typography 
                       variant="body2" 
                       color={task.overdue ? "error" : "textSecondary"}
+                      sx={{ ml: 4 }}
                     >
                       Due: {new Date(task.dueDate).toLocaleDateString()}
                     </Typography>
                   )}
                   {task.imageUrl && (
-                    <img 
-                      src={task.imageUrl} 
-                      alt="Task attachment" 
-                      style={{ 
-                        maxWidth: '100%', 
-                        maxHeight: '200px', 
-                        marginTop: '8px',
-                        borderRadius: '4px'
-                      }} 
-                    />
+                    <Box sx={{ ml: 4, mt: 1 }}>
+                      <img 
+                        src={task.imageUrl} 
+                        alt="Task attachment" 
+                        style={{ 
+                          maxWidth: '100%', 
+                          maxHeight: '200px', 
+                          borderRadius: '4px'
+                        }} 
+                      />
+                    </Box>
                   )}
                 </Box>
               </Box>
@@ -252,6 +344,49 @@ const Dashboard = ({ onLogout }) => {
           </Box>
         </Box>
       </Box>
+
+      {/* Task Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+      >
+        <MenuItem 
+          onClick={() => {
+            handleMenuClose();
+            setOpenDeleteDialog(true);
+          }}
+          sx={{ color: 'error.main' }}
+        >
+          <DeleteIcon sx={{ mr: 1 }} />
+          Delete
+        </MenuItem>
+      </Menu>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={openDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
+      >
+        <DialogTitle>Delete Task</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete this task? This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDeleteDialog(false)}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleDeleteTask} 
+            color="error"
+            variant="contained"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Add Task Dialog */}
       <Dialog open={openAddDialog} onClose={() => setOpenAddDialog(false)}>
