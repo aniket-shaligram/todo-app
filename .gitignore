@@ -1,0 +1,35 @@
+# Backend
+todo-backend/HELP.md
+todo-backend/target/
+todo-backend/.mvn/
+todo-backend/!.mvn/wrapper/maven-wrapper.jar
+todo-backend/!**/src/main/**/target/
+todo-backend/!**/src/test/**/target/
+
+# Frontend
+todo-frontend/node_modules/
+todo-frontend/.pnp
+todo-frontend/.pnp.js
+todo-frontend/coverage/
+todo-frontend/build/
+todo-frontend/.DS_Store
+todo-frontend/.env.local
+todo-frontend/.env.development.local
+todo-frontend/.env.test.local
+todo-frontend/.env.production.local
+todo-frontend/npm-debug.log*
+todo-frontend/yarn-debug.log*
+todo-frontend/yarn-error.log*
+
+# IDE files
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
