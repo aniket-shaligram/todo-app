@@ -5,8 +5,8 @@ const AUTH_TOKEN_KEY = 'authToken';
 export const config = {
     API_BASE_URL,
     AUTH_TOKEN_KEY,
-    LOGIN_URL: `${API_BASE_URL}/auth/login`,
-    REGISTER_URL: `${API_BASE_URL}/auth/register`,
-    TODOS_URL: `${API_BASE_URL}/todos`,
-    PROFILE_URL: `${API_BASE_URL}/profile`,
+    LOGIN_URL: `${API_BASE_URL}/api/users/login`,
+    REGISTER_URL: `${API_BASE_URL}/api/users/register`,
+    TODOS_URL: `${API_BASE_URL}/api/todos`,
+    PROFILE_URL: `${API_BASE_URL}/api/users/profile`,
 };
