@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import axios from 'axios';
 import { BrowserRouter as Router, Route, Routes, Navigate, Link } from 'react-router-dom';
-import { Container, AppBar, Toolbar, Typography, Button, Paper, TextField, List, ListItem, ListItemText, ListItemSecondaryAction, IconButton, Checkbox, Box, Chip, FormControlLabel } from '@mui/material';
+import { Container, AppBar, Toolbar, Typography, Button, Paper, TextField, List, ListItem, ListItemText, ListItemSecondaryAction, IconButton, Checkbox, Box, Chip, FormControlLabel, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
@@ -11,27 +11,18 @@ import config from './config';
 const API_URL = config.API_URL;
 const AUTH_TOKEN_KEY = config.AUTH_TOKEN_KEY;
 
-const TodoDatePicker = memo(({ value, onChange }) => (
-  <LocalizationProvider dateAdapter={AdapterDayjs}>
-    <DateTimePicker
-      label="Due Date (optional)"
-      value={value}
-      onChange={onChange}
-      slotProps={{ textField: { fullWidth: true } }}
-    />
-  </LocalizationProvider>
-));
-
-const TodoForm = memo(({ onSubmit }) => {
-  const [title, setTitle] = useState('');
-  const [dueDate, setDueDate] = useState(null);
+const TodoForm = memo(({ onSubmit, initialData = null }) => {
+  const [title, setTitle] = useState(initialData?.title || '');
+  const [dueDate, setDueDate] = useState(initialData?.dueDate ? dayjs(initialData.dueDate) : null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) return;
     onSubmit({ title, dueDate: dueDate ? dueDate.toISOString() : null });
-    setTitle('');
-    setDueDate(null);
+    if (!initialData) {
+      setTitle('');
+      setDueDate(null);
+    }
   };
 
   return (
@@ -39,24 +30,52 @@ const TodoForm = memo(({ onSubmit }) => {
       <Box display="flex" flexDirection="column" gap={2}>
         <TextField
           fullWidth
-          label="New Todo"
+          label="Todo Title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           autoComplete="off"
         />
-        <TodoDatePicker
-          value={dueDate}
-          onChange={setDueDate}
-        />
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <DateTimePicker
+            label="Due Date (optional)"
+            value={dueDate}
+            onChange={setDueDate}
+            slotProps={{ textField: { fullWidth: true } }}
+          />
+        </LocalizationProvider>
         <Button type="submit" variant="contained" color="primary">
-          Add Todo
+          {initialData ? 'Update Todo' : 'Add Todo'}
         </Button>
       </Box>
     </form>
   );
 });
 
-const TodoItem = memo(({ todo, onToggle, onDelete }) => (
+const EditTodoDialog = memo(({ todo, open, onClose, onSave }) => {
+  if (!todo) return null;
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>Edit Todo</DialogTitle>
+      <DialogContent>
+        <Box py={2}>
+          <TodoForm
+            initialData={todo}
+            onSubmit={(data) => {
+              onSave({ ...todo, ...data });
+              onClose();
+            }}
+          />
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+      </DialogActions>
+    </Dialog>
+  );
+});
+
+const TodoItem = memo(({ todo, onToggle, onDelete, onEdit }) => (
   <ListItem divider>
     <Checkbox
       checked={todo.completed}
@@ -81,8 +100,13 @@ const TodoItem = memo(({ todo, onToggle, onDelete }) => (
         textDecoration: todo.completed ? 'line-through' : 'none',
         color: todo.completed ? 'gray' : 'inherit'
       }}
+      onClick={() => onEdit(todo)}
+      sx={{ cursor: 'pointer' }}
     />
     <ListItemSecondaryAction>
+      <IconButton edge="end" onClick={() => onEdit(todo)} sx={{ mr: 1 }}>
+        ✏️
+      </IconButton>
       <IconButton edge="end" onClick={() => onDelete(todo.id)}>
         🗑️
       </IconButton>
@@ -97,6 +121,7 @@ function App() {
   const [showOverdueOnly, setShowOverdueOnly] = useState(false);
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [loginError, setLoginError] = useState('');
+  const [editingTodo, setEditingTodo] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem(AUTH_TOKEN_KEY);
@@ -170,6 +195,21 @@ function App() {
       setTodos(prevTodos => [...prevTodos, response.data]);
     } catch (error) {
       console.error('Error adding todo:', error);
+    }
+  }, []);
+
+  const updateTodo = useCallback(async (todo) => {
+    try {
+      const response = await axios.put(`${API_URL}/todos/${todo.id}`, {
+        title: todo.title,
+        completed: todo.completed,
+        dueDate: todo.dueDate
+      }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem(AUTH_TOKEN_KEY)}` }
+      });
+      setTodos(prevTodos => prevTodos.map(t => t.id === todo.id ? response.data : t));
+    } catch (error) {
+      console.error('Error updating todo:', error);
     }
   }, []);
 
@@ -253,6 +293,7 @@ function App() {
           todo={todo}
           onToggle={toggleTodo}
           onDelete={deleteTodo}
+          onEdit={setEditingTodo}
         />
       ))
     ), [todos, toggleTodo, deleteTodo]);
@@ -278,6 +319,13 @@ function App() {
           <List>
             {todoItems}
           </List>
+
+          <EditTodoDialog
+            todo={editingTodo}
+            open={!!editingTodo}
+            onClose={() => setEditingTodo(null)}
+            onSave={updateTodo}
+          />
         </Paper>
       </Container>
     );
