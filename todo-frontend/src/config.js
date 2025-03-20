@@ -1,6 +1,6 @@
 // API Configuration
 const API_BASE_URL = 'http://localhost:8080';
-const AUTH_TOKEN_KEY = 'auth_token';
+const AUTH_TOKEN_KEY = 'authToken';
 
 export const config = {
     API_BASE_URL,

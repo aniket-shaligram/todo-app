@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Box, Typography, TextField, IconButton, Avatar, Button, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Typography, TextField, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
@@ -28,21 +28,58 @@ const Dashboard = ({ onLogout }) => {
     };
   };
 
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const token = localStorage.getItem(config.AUTH_TOKEN_KEY);
+        if (!token) {
+          console.error('No auth token found');
+          onLogout();
+          return;
+        }
+
+        const response = await axios.get(config.TODOS_URL, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        setTasks(response.data);
+      } catch (error) {
+        console.error('Failed to fetch tasks:', error);
+        if (error.response?.status === 403) {
+          onLogout();
+        }
+      }
+    };
+
+    fetchTasks();
+  }, [onLogout]);
+
   const handleAddTask = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem(config.AUTH_TOKEN_KEY);
+      if (!token) {
+        console.error('No auth token found');
+        onLogout();
+        return;
+      }
+
       const response = await axios.post(config.TODOS_URL, newTask, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
+      
       setTasks([...tasks, response.data]);
       setOpenAddDialog(false);
       setNewTask({ title: '', description: '', dueDate: '' });
     } catch (error) {
       console.error('Failed to add task:', error);
+      if (error.response?.status === 403) {
+        onLogout();
+      }
     } finally {
       setLoading(false);
     }
@@ -124,6 +161,11 @@ const Dashboard = ({ onLogout }) => {
                   <Typography variant="body2" color="textSecondary">
                     {task.description}
                   </Typography>
+                  {task.dueDate && (
+                    <Typography variant="body2" color="textSecondary">
+                      Due: {new Date(task.dueDate).toLocaleDateString()}
+                    </Typography>
+                  )}
                 </Box>
               </Box>
             ))}
