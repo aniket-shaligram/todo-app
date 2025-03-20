@@ -14,13 +14,16 @@ import './App.css';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem(config.AUTH_TOKEN_KEY));
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')));
 
   const handleLogin = async (credentials) => {
     try {
       const response = await axios.post(config.LOGIN_URL, credentials);
-      const { token } = response.data;
+      const { token, user } = response.data;
       localStorage.setItem(config.AUTH_TOKEN_KEY, token);
+      localStorage.setItem('user', JSON.stringify(user));
       setIsAuthenticated(true);
+      setUser(user);
       return true;
     } catch (error) {
       console.error('Login failed:', error);
@@ -30,15 +33,19 @@ function App() {
 
   const handleLogout = () => {
     localStorage.removeItem(config.AUTH_TOKEN_KEY);
+    localStorage.removeItem('user');
     setIsAuthenticated(false);
+    setUser(null);
   };
 
   const handleRegister = async (userData) => {
     try {
       const response = await axios.post(config.REGISTER_URL, userData);
-      const { token } = response.data;
+      const { token, user } = response.data;
       localStorage.setItem(config.AUTH_TOKEN_KEY, token);
+      localStorage.setItem('user', JSON.stringify(user));
       setIsAuthenticated(true);
+      setUser(user);
       return true;
     } catch (error) {
       console.error('Registration failed:', error);
@@ -77,7 +84,7 @@ function App() {
                 path="/dashboard"
                 element={
                   isAuthenticated ? (
-                    <Dashboard onLogout={handleLogout} />
+                    <Dashboard onLogout={handleLogout} user={user} />
                   ) : (
                     <Navigate to="/login" replace />
                   )

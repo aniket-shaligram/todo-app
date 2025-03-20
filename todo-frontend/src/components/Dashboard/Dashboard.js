@@ -42,7 +42,7 @@ import axios from 'axios';
 import { config } from '../../config';
 import './Dashboard.css';
 
-const Dashboard = ({ onLogout }) => {
+const Dashboard = ({ onLogout, user }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [tasks, setTasks] = useState([]);
   const [openAddDialog, setOpenAddDialog] = useState(false);
@@ -113,6 +113,10 @@ const Dashboard = ({ onLogout }) => {
   };
 
   useEffect(() => {
+    if (!user) {
+      onLogout();
+      return;
+    }
     const fetchTasks = async () => {
       try {
         const token = localStorage.getItem(config.AUTH_TOKEN_KEY);
@@ -137,7 +141,7 @@ const Dashboard = ({ onLogout }) => {
     };
 
     fetchTasks();
-  }, [onLogout]);
+  }, [user, onLogout]);
 
   const handleAddTask = async () => {
     try {
@@ -207,12 +211,11 @@ const Dashboard = ({ onLogout }) => {
       <div className="sidebar">
         <div className="user-profile">
           <Avatar
-            alt="User Avatar"
             src="/avatar.jpg"
             className="avatar"
           />
-          <Typography className="user-name">Sundar Gurung</Typography>
-          <Typography className="user-email">sundar.gurung360@gmail.com</Typography>
+          <Typography className="user-name">{user?.name || 'Guest'}</Typography>
+          <Typography className="user-email">{user?.email || ''}</Typography>
         </div>
 
         <List className="nav-menu">
@@ -284,7 +287,7 @@ const Dashboard = ({ onLogout }) => {
         {/* Header */}
         <div className="header">
           <Typography className="welcome-text">
-            Welcome back, Sundar 👋
+            Welcome back{user ? `, ${user.name}` : ''} 👋
           </Typography>
           <div className="header-right">
             <div className="search-bar">

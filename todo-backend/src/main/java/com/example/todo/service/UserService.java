@@ -3,6 +3,8 @@ package com.example.todo.service;
 import com.example.todo.model.User;
 import com.example.todo.model.Subscription;
 import com.example.todo.repository.UserRepository;
+import com.example.todo.request.LoginRequest;
+import com.example.todo.request.RegisterRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -63,6 +65,30 @@ public class UserService implements UserDetailsService {
     public User registerTenant(String email, String password, String name, Subscription.SubscriptionTier tier) {
         User user = registerUser(email, password, name, false);
         return upgradeSubscription(user.getId(), tier);
+    }
+
+    public User register(RegisterRequest request) {
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new RuntimeException("Email already registered");
+        }
+        
+        User user = new User();
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setName(request.getName());
+        
+        return userRepository.save(user);
+    }
+
+    public User login(LoginRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new RuntimeException("Invalid password");
+        }
+
+        return user;
     }
 
     @Override

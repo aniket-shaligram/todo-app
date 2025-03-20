@@ -19,17 +19,21 @@ const Sidebar = ({ user, onLogout }) => {
     { icon: <HelpIcon />, label: 'Help' },
   ];
 
+  if (!user) {
+    return null;
+  }
+
   return (
     <Box className="sidebar">
       <Box className="sidebar-header">
         <Avatar
-          src={user?.avatar}
-          alt={user?.name}
+          src={user.avatar || '/avatar.jpg'}
+          alt={user.name || 'User'}
           className="sidebar-avatar"
         />
-        <Typography variant="h6">{user?.name || 'User'}</Typography>
+        <Typography variant="h6">{user.name || 'Guest'}</Typography>
         <Typography variant="body2" color="rgba(255,255,255,0.7)">
-          {user?.email}
+          {user.email || ''}
         </Typography>
       </Box>
 
