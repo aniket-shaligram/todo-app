@@ -106,14 +106,5 @@ public class UserService implements UserDetailsService {
         if (userRepository.count() == 0) {
             registerUser(defaultAdminEmail, defaultAdminPassword, defaultAdminName, true);
         }
-        // Add additional admin user if it doesn't exist
-        if (userRepository.findByEmail("admin@thermax.com").isEmpty()) {
-            try {
-                registerUser("admin@thermax.com", "admin123", "Thermax Admin", true);
-            } catch (Exception e) {
-                // Log error but don't fail initialization
-                System.err.println("Failed to create additional admin user: " + e.getMessage());
-            }
-        }
     }
 }

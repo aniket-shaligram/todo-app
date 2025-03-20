@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/auth")
-@CrossOrigin(origins = "${app.cors.allowed-origins}")
+@RequestMapping("/api/auth")
+@CrossOrigin(origins = "${app.cors.allowed-origins}", allowCredentials = "true", maxAge = 3600)
 public class AuthController {
 
     private final UserService userService;
@@ -31,12 +31,14 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
+            log.debug("Processing registration request for email: {}", request.getEmail());
             User user = userService.registerUser(request.getEmail(), request.getPassword(), request.getName());
             UserDetails userDetails = userService.loadUserByUsername(user.getEmail());
             String token = jwtService.generateToken(userDetails);
+            log.debug("Registration successful for email: {}", request.getEmail());
             return ResponseEntity.ok(new AuthResponse(token));
         } catch (RuntimeException e) {
-            log.error("Registration failed", e);
+            log.error("Registration failed for email: {}", request.getEmail(), e);
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
         }
     }
@@ -44,27 +46,26 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
-            log.debug("Attempting login for user: {}", request.getEmail());
+            log.debug("Processing login request for email: {}", request.getEmail());
             
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
             
-            log.debug("User authenticated successfully");
+            log.debug("User authenticated successfully: {}", request.getEmail());
             
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            log.debug("User details loaded: {}", userDetails.getUsername());
-            
             String token = jwtService.generateToken(userDetails);
-            log.debug("JWT token generated successfully");
+            
+            log.debug("JWT token generated for user: {}", request.getEmail());
             
             return ResponseEntity.ok(new AuthResponse(token));
         } catch (BadCredentialsException e) {
             log.error("Invalid credentials for user: {}", request.getEmail());
             return ResponseEntity.status(401).body(new ErrorResponse("Invalid email or password"));
         } catch (Exception e) {
-            log.error("Login failed for user: " + request.getEmail(), e);
-            return ResponseEntity.status(500).body(new ErrorResponse(e.getMessage()));
+            log.error("Login failed for user: {}", request.getEmail(), e);
+            return ResponseEntity.status(500).body(new ErrorResponse("Internal server error"));
         }
     }
 }
