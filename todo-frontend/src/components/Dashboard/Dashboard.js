@@ -1,13 +1,19 @@
 import React, { useState } from 'react';
-import { Box, Typography, TextField, IconButton, Avatar, Button, CircularProgress } from '@mui/material';
+import { Box, Typography, TextField, IconButton, Avatar, Button, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import AddIcon from '@mui/icons-material/Add';
+import axios from 'axios';
+import { config } from '../../config';
 import './Dashboard.css';
 
-const Dashboard = ({ user, tasks, onAddTask }) => {
+const Dashboard = ({ onLogout }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [tasks, setTasks] = useState([]);
+  const [openAddDialog, setOpenAddDialog] = useState(false);
+  const [newTask, setNewTask] = useState({ title: '', description: '', dueDate: '' });
+  const [loading, setLoading] = useState(false);
   
   const calculateTaskStats = () => {
     const total = tasks.length;
@@ -20,6 +26,26 @@ const Dashboard = ({ user, tasks, onAddTask }) => {
       inProgress: total ? Math.round((inProgress / total) * 100) : 0,
       notStarted: total ? Math.round((notStarted / total) * 100) : 0
     };
+  };
+
+  const handleAddTask = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem(config.AUTH_TOKEN_KEY);
+      const response = await axios.post(config.TODOS_URL, newTask, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      setTasks([...tasks, response.data]);
+      setOpenAddDialog(false);
+      setNewTask({ title: '', description: '', dueDate: '' });
+    } catch (error) {
+      console.error('Failed to add task:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const stats = calculateTaskStats();
@@ -61,20 +87,17 @@ const Dashboard = ({ user, tasks, onAddTask }) => {
           <Typography variant="body2" color="textSecondary">
             {formattedDate}
           </Typography>
+          <Button onClick={onLogout} color="primary" variant="outlined">
+            Logout
+          </Button>
         </Box>
       </Box>
 
       {/* Welcome Section */}
       <Box className="welcome-section">
         <Typography variant="h4" component="h1">
-          Welcome back, {user?.name || 'User'} 👋
+          Welcome back! 👋
         </Typography>
-        <Box className="team-avatars">
-          {/* Team avatars would go here */}
-          <Button variant="contained" color="primary" startIcon={<AddIcon />}>
-            Invite
-          </Button>
-        </Box>
       </Box>
 
       {/* Main Content */}
@@ -84,8 +107,9 @@ const Dashboard = ({ user, tasks, onAddTask }) => {
             <Typography variant="h6">To-Do</Typography>
             <Button
               startIcon={<AddIcon />}
-              onClick={onAddTask}
+              onClick={() => setOpenAddDialog(true)}
               color="primary"
+              variant="contained"
             >
               Add task
             </Button>
@@ -101,53 +125,52 @@ const Dashboard = ({ user, tasks, onAddTask }) => {
                     {task.description}
                   </Typography>
                 </Box>
-                {task.image && (
-                  <Box className="task-image">
-                    <img src={task.image} alt={task.title} />
-                  </Box>
-                )}
               </Box>
             ))}
           </Box>
         </Box>
-
-        {/* Task Status */}
-        <Box className="status-section">
-          <Typography variant="h6">Task Status</Typography>
-          <Box className="status-charts">
-            <Box className="status-item">
-              <CircularProgress
-                variant="determinate"
-                value={stats.completed}
-                color="success"
-                size={80}
-              />
-              <Typography>Completed</Typography>
-              <Typography variant="h6">{stats.completed}%</Typography>
-            </Box>
-            <Box className="status-item">
-              <CircularProgress
-                variant="determinate"
-                value={stats.inProgress}
-                color="primary"
-                size={80}
-              />
-              <Typography>In Progress</Typography>
-              <Typography variant="h6">{stats.inProgress}%</Typography>
-            </Box>
-            <Box className="status-item">
-              <CircularProgress
-                variant="determinate"
-                value={stats.notStarted}
-                color="error"
-                size={80}
-              />
-              <Typography>Not Started</Typography>
-              <Typography variant="h6">{stats.notStarted}%</Typography>
-            </Box>
-          </Box>
-        </Box>
       </Box>
+
+      {/* Add Task Dialog */}
+      <Dialog open={openAddDialog} onClose={() => setOpenAddDialog(false)}>
+        <DialogTitle>Add New Task</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Title"
+            fullWidth
+            value={newTask.title}
+            onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+          />
+          <TextField
+            margin="dense"
+            label="Description"
+            fullWidth
+            multiline
+            rows={4}
+            value={newTask.description}
+            onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+          />
+          <TextField
+            margin="dense"
+            label="Due Date"
+            type="date"
+            fullWidth
+            InputLabelProps={{ shrink: true }}
+            value={newTask.dueDate}
+            onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenAddDialog(false)} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleAddTask} color="primary" disabled={loading}>
+            Add
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };
