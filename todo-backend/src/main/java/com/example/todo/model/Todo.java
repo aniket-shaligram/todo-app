@@ -30,6 +30,9 @@ public class Todo {
     @Enumerated(EnumType.STRING)
     private com.example.todo.model.Priority priority = com.example.todo.model.Priority.MEDIUM;
 
+    @Enumerated(EnumType.STRING)
+    private com.example.todo.model.Status status = com.example.todo.model.Status.NOT_STARTED;
+
     @Column(length = 1000)
     private String imageUrl;
     
@@ -58,6 +61,13 @@ public class Todo {
             overdue = LocalDateTime.now().isAfter(dueDate);
         } else {
             overdue = false;
+        }
+
+        // Update status based on completion
+        if (completed) {
+            status = com.example.todo.model.Status.COMPLETED;
+        } else if (status == com.example.todo.model.Status.COMPLETED) {
+            status = com.example.todo.model.Status.IN_PROGRESS;
         }
     }
 }

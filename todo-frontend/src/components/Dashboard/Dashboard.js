@@ -19,7 +19,10 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  CircularProgress
+  CircularProgress,
+  Menu,
+  MenuItem,
+  Tooltip
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsIcon from '@mui/icons-material/Notifications';
@@ -32,6 +35,9 @@ import HelpIcon from '@mui/icons-material/Help';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AddIcon from '@mui/icons-material/Add';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import axios from 'axios';
 import { config } from '../../config';
 import './Dashboard.css';
@@ -45,16 +51,59 @@ const Dashboard = ({ onLogout }) => {
     description: '', 
     dueDate: '', 
     priority: 'MEDIUM',
+    status: 'NOT_STARTED',
     imageUrl: '' 
   });
   const [loading, setLoading] = useState(false);
   const [activeNav, setActiveNav] = useState('dashboard');
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedTask, setSelectedTask] = useState(null);
+
+  const handleMenuOpen = (event, task) => {
+    event.stopPropagation();
+    setAnchorEl(event.currentTarget);
+    setSelectedTask(task);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedTask(null);
+  };
+
+  const handleStatusChange = async (task, newStatus) => {
+    try {
+      const token = localStorage.getItem(config.AUTH_TOKEN_KEY);
+      if (!token) {
+        console.error('No auth token found');
+        onLogout();
+        return;
+      }
+
+      const response = await axios.put(`${config.TODOS_URL}/${task.id}`, {
+        ...task,
+        status: newStatus
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      setTasks(tasks.map(t => t.id === task.id ? response.data : t));
+      handleMenuClose();
+    } catch (error) {
+      console.error('Failed to update task:', error);
+      if (error.response?.status === 403) {
+        onLogout();
+      }
+    }
+  };
 
   const calculateTaskStats = () => {
     const total = tasks.length;
-    const completed = tasks.filter(task => task.completed).length;
-    const inProgress = tasks.filter(task => !task.completed && !task.overdue).length;
-    const notStarted = tasks.filter(task => !task.completed && task.overdue).length;
+    const completed = tasks.filter(task => task.status === 'COMPLETED').length;
+    const inProgress = tasks.filter(task => task.status === 'IN_PROGRESS').length;
+    const notStarted = tasks.filter(task => task.status === 'NOT_STARTED').length;
     
     return {
       completed: total ? Math.round((completed / total) * 100) : 0,
@@ -107,6 +156,7 @@ const Dashboard = ({ onLogout }) => {
         description: newTask.description,
         dueDate: dueDate,
         priority: newTask.priority,
+        status: newTask.status,
         imageUrl: newTask.imageUrl
       }, {
         headers: {
@@ -122,6 +172,7 @@ const Dashboard = ({ onLogout }) => {
         description: '', 
         dueDate: '', 
         priority: 'MEDIUM',
+        status: 'NOT_STARTED',
         imageUrl: '' 
       });
     } catch (error) {
@@ -134,36 +185,21 @@ const Dashboard = ({ onLogout }) => {
     }
   };
 
-  const handleToggleComplete = async (task) => {
-    try {
-      const token = localStorage.getItem(config.AUTH_TOKEN_KEY);
-      if (!token) {
-        console.error('No auth token found');
-        onLogout();
-        return;
-      }
-
-      const response = await axios.put(`${config.TODOS_URL}/${task.id}`, {
-        ...task,
-        completed: !task.completed
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      setTasks(tasks.map(t => t.id === task.id ? response.data : t));
-    } catch (error) {
-      console.error('Failed to update task:', error);
-      if (error.response?.status === 403) {
-        onLogout();
-      }
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'COMPLETED':
+        return '#4caf50';
+      case 'IN_PROGRESS':
+        return '#2196f3';
+      case 'NOT_STARTED':
+        return '#f44336';
+      default:
+        return '#757575';
     }
   };
 
   const stats = calculateTaskStats();
-  const completedTasks = tasks.filter(task => task.completed);
+  const completedTasks = tasks.filter(task => task.status === 'COMPLETED');
 
   return (
     <div className="dashboard-container">
@@ -301,11 +337,11 @@ const Dashboard = ({ onLogout }) => {
             </div>
             
             <div className="task-list">
-              {tasks.filter(task => !task.completed).map((task) => (
+              {tasks.filter(task => task.status !== 'COMPLETED').map((task) => (
                 <div key={task.id} className="task-card">
                   <div 
-                    className={`task-status ${task.completed ? 'completed' : ''}`}
-                    onClick={() => handleToggleComplete(task)}
+                    className="task-status"
+                    style={{ backgroundColor: getStatusColor(task.status) }}
                   />
                   <div className="task-content">
                     <Typography className="task-title">
@@ -318,6 +354,7 @@ const Dashboard = ({ onLogout }) => {
                     )}
                     <div className="task-meta">
                       <span>Priority: {task.priority}</span>
+                      <span>Status: {task.status.replace('_', ' ')}</span>
                       {task.dueDate && (
                         <span>
                           Due: {new Date(task.dueDate).toLocaleDateString()}
@@ -332,6 +369,15 @@ const Dashboard = ({ onLogout }) => {
                       className="task-image"
                     />
                   )}
+                  <Tooltip title="Task actions">
+                    <IconButton
+                      size="small"
+                      onClick={(e) => handleMenuOpen(e, task)}
+                      className="task-menu-button"
+                    >
+                      <MoreVertIcon />
+                    </IconButton>
+                  </Tooltip>
                 </div>
               ))}
             </div>
@@ -405,7 +451,7 @@ const Dashboard = ({ onLogout }) => {
                       {task.title}
                     </Typography>
                     <Typography className="completed-task-date">
-                      Completed {new Date(task.dueDate).toLocaleDateString()}
+                      Completed {new Date(task.updatedAt).toLocaleDateString()}
                     </Typography>
                   </div>
                 </div>
@@ -414,6 +460,26 @@ const Dashboard = ({ onLogout }) => {
           </div>
         </div>
       </div>
+
+      {/* Task Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+      >
+        {selectedTask?.status === 'NOT_STARTED' && (
+          <MenuItem onClick={() => handleStatusChange(selectedTask, 'IN_PROGRESS')}>
+            <PlayArrowIcon sx={{ mr: 1, color: '#2196f3' }} />
+            Start Task
+          </MenuItem>
+        )}
+        {selectedTask?.status === 'IN_PROGRESS' && (
+          <MenuItem onClick={() => handleStatusChange(selectedTask, 'COMPLETED')}>
+            <CheckCircleIcon sx={{ mr: 1, color: '#4caf50' }} />
+            Complete Task
+          </MenuItem>
+        )}
+      </Menu>
 
       {/* Add Task Dialog */}
       <Dialog open={openAddDialog} onClose={() => setOpenAddDialog(false)}>

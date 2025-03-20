@@ -10,5 +10,6 @@ public class TodoRequest {
     private boolean completed;
     private LocalDateTime dueDate;
     private String priority = "MEDIUM";
+    private String status = "NOT_STARTED";
     private String imageUrl;
 }

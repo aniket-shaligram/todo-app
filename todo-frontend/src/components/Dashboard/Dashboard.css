@@ -1,72 +1,62 @@
 .dashboard-container {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   background-color: #f8f9fa;
 }
 
 .sidebar {
-  width: 250px;
-  background-color: #ff6b6b;
+  width: 280px;
+  background-color: #ffffff;
   padding: 24px;
-  color: white;
-  position: fixed;
-  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #e9ecef;
 }
 
 .user-profile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  text-align: center;
   margin-bottom: 32px;
 }
 
 .avatar {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
+  width: 80px !important;
+  height: 80px !important;
   margin-bottom: 16px;
 }
 
 .user-name {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 4px;
+  font-weight: 600 !important;
+  margin-bottom: 4px !important;
 }
 
 .user-email {
-  font-size: 14px;
-  opacity: 0.8;
+  color: #636e72;
+  font-size: 0.875rem !important;
 }
 
 .nav-menu {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+  flex-grow: 1;
 }
 
 .nav-item {
-  padding: 12px 16px;
-  margin-bottom: 8px;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  transition: background-color 0.2s;
-}
-
-.nav-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 8px !important;
+  margin-bottom: 8px !important;
+  padding: 12px !important;
 }
 
 .nav-item.active {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: #ff6b6b !important;
+  color: white !important;
+}
+
+.nav-item.active .MuiListItemIcon-root {
+  color: white !important;
 }
 
 .main-content {
-  flex: 1;
-  margin-left: 250px;
+  flex-grow: 1;
   padding: 24px;
+  overflow-y: auto;
 }
 
 .header {
@@ -77,8 +67,8 @@
 }
 
 .welcome-text {
-  font-size: 28px;
-  font-weight: 600;
+  font-size: 1.5rem !important;
+  font-weight: 600 !important;
 }
 
 .header-right {
@@ -88,36 +78,41 @@
 }
 
 .search-bar {
-  position: relative;
   width: 300px;
 }
 
-.search-bar input {
-  width: 100%;
-  padding: 12px 16px;
-  padding-right: 40px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
+.search-icon {
+  color: #636e72;
 }
 
-.search-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #666;
+.invite-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.invite-button:hover {
+  background-color: #ff5252;
 }
 
 .task-container {
   display: grid;
-  grid-template-columns: 7fr 3fr;
+  grid-template-columns: 1fr 300px;
   gap: 24px;
 }
 
 .task-section {
-  background: white;
-  border-radius: 16px;
+  background-color: white;
+  border-radius: 12px;
   padding: 24px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
@@ -130,131 +125,132 @@
 }
 
 .task-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: 16px;
 }
 
 .task-card {
-  background: white;
-  border: 1px solid #eee;
-  border-radius: 12px;
-  padding: 16px;
   display: flex;
   gap: 16px;
+  background-color: white;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #e9ecef;
+  position: relative;
 }
 
 .task-status {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 2px solid #ddd;
-  cursor: pointer;
+  width: 4px;
+  border-radius: 4px;
+  background-color: #e9ecef;
+  transition: background-color 0.2s;
 }
 
 .task-status.completed {
   background-color: #4caf50;
-  border-color: #4caf50;
+}
+
+.task-status.pending {
+  background-color: #ff9800;
+}
+
+.task-status.overdue {
+  background-color: #f44336;
 }
 
 .task-content {
-  flex: 1;
+  flex-grow: 1;
 }
 
 .task-title {
-  font-weight: 600;
-  margin-bottom: 8px;
+  font-weight: 600 !important;
+  margin-bottom: 8px !important;
 }
 
 .task-description {
-  color: #666;
-  font-size: 14px;
-  margin-bottom: 12px;
+  color: #636e72;
+  font-size: 0.875rem !important;
+  margin-bottom: 12px !important;
 }
 
 .task-meta {
   display: flex;
-  align-items: center;
   gap: 16px;
-  font-size: 12px;
-  color: #888;
+  color: #636e72;
+  font-size: 0.75rem;
 }
 
 .task-image {
-  width: 120px;
+  width: 80px;
   height: 80px;
-  border-radius: 8px;
   object-fit: cover;
+  border-radius: 8px;
+}
+
+.task-menu-button {
+  position: absolute !important;
+  top: 8px;
+  right: 8px;
 }
 
 .status-section {
-  background: white;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.status-charts {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
+.status-charts {
+  display: grid;
+  gap: 16px;
+}
+
 .chart-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
   text-align: center;
 }
 
 .completed-tasks {
-  margin-top: 24px;
+  background-color: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .completed-task-card {
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 16px;
   display: flex;
-  gap: 16px;
-  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  margin-bottom: 12px;
+}
+
+.completed-task-card:last-child {
+  margin-bottom: 0;
 }
 
 .completed-task-image {
-  width: 60px;
-  height: 60px;
+  width: 48px;
+  height: 48px;
   border-radius: 8px;
   object-fit: cover;
 }
 
 .completed-task-content {
-  flex: 1;
+  flex-grow: 1;
 }
 
 .completed-task-title {
-  font-weight: 500;
-  margin-bottom: 4px;
+  font-weight: 500 !important;
+  margin-bottom: 4px !important;
 }
 
 .completed-task-date {
-  font-size: 12px;
-  color: #888;
-}
-
-.invite-button {
-  background-color: white;
-  color: #ff6b6b;
-  border: 1px solid #ff6b6b;
-  padding: 8px 16px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.invite-button:hover {
-  background-color: #ff6b6b;
-  color: white;
+  color: #636e72;
+  font-size: 0.75rem !important;
 }
 
 @media (max-width: 1024px) {

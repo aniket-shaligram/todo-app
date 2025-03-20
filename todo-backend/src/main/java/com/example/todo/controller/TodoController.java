@@ -3,6 +3,7 @@ package com.example.todo.controller;
 import com.example.todo.model.Todo;
 import com.example.todo.model.User;
 import com.example.todo.model.Priority;
+import com.example.todo.model.Status;
 import com.example.todo.repository.TodoRepository;
 import com.example.todo.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
@@ -59,6 +60,7 @@ public class TodoController {
             todo.setCompleted(false);
             todo.setDueDate(todoRequest.getDueDate());
             todo.setPriority(Priority.valueOf(todoRequest.getPriority()));
+            todo.setStatus(Status.valueOf(todoRequest.getStatus()));
             todo.setImageUrl(todoRequest.getImageUrl());
             todo.setUser(currentUser);
             
@@ -86,6 +88,7 @@ public class TodoController {
             todo.setDescription(todoRequest.getDescription());
             todo.setCompleted(todoRequest.isCompleted());
             todo.setPriority(Priority.valueOf(todoRequest.getPriority()));
+            todo.setStatus(Status.valueOf(todoRequest.getStatus()));
             todo.setImageUrl(todoRequest.getImageUrl());
             
             if (todoRequest.getDueDate() != null) {
@@ -139,5 +142,6 @@ class TodoRequest {
     private boolean completed;
     private LocalDateTime dueDate;
     private String priority;
+    private String status;
     private String imageUrl;
 }
