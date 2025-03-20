@@ -2,6 +2,7 @@ package com.example.todo.controller;
 
 import com.example.todo.model.Todo;
 import com.example.todo.model.User;
+import com.example.todo.model.Priority;
 import com.example.todo.repository.TodoRepository;
 import com.example.todo.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
@@ -54,8 +55,11 @@ public class TodoController {
             
             Todo todo = new Todo();
             todo.setTitle(todoRequest.getTitle());
+            todo.setDescription(todoRequest.getDescription());
             todo.setCompleted(false);
             todo.setDueDate(todoRequest.getDueDate());
+            todo.setPriority(Priority.valueOf(todoRequest.getPriority()));
+            todo.setImageUrl(todoRequest.getImageUrl());
             todo.setUser(currentUser);
             
             Todo savedTodo = todoRepository.save(todo);
@@ -79,7 +83,11 @@ public class TodoController {
             }
 
             todo.setTitle(todoRequest.getTitle());
+            todo.setDescription(todoRequest.getDescription());
             todo.setCompleted(todoRequest.isCompleted());
+            todo.setPriority(Priority.valueOf(todoRequest.getPriority()));
+            todo.setImageUrl(todoRequest.getImageUrl());
+            
             if (todoRequest.getDueDate() != null) {
                 todo.setDueDate(todoRequest.getDueDate());
             }
@@ -103,7 +111,7 @@ public class TodoController {
             if (!todo.getUser().getId().equals(currentUser.getId())) {
                 return ResponseEntity.status(403).build();
             }
-
+            
             todoRepository.delete(todo);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
@@ -127,6 +135,9 @@ public class TodoController {
 @Data
 class TodoRequest {
     private String title;
+    private String description;
     private boolean completed;
     private LocalDateTime dueDate;
+    private String priority;
+    private String imageUrl;
 }

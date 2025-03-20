@@ -1,5 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, TextField, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { 
+  Box, 
+  Typography, 
+  TextField, 
+  IconButton, 
+  Button, 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  DialogActions,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  FormControl,
+  FormLabel
+} from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
@@ -12,19 +27,25 @@ const Dashboard = ({ onLogout }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [tasks, setTasks] = useState([]);
   const [openAddDialog, setOpenAddDialog] = useState(false);
-  const [newTask, setNewTask] = useState({ title: '', description: '', dueDate: '' });
+  const [newTask, setNewTask] = useState({ 
+    title: '', 
+    description: '', 
+    dueDate: '', 
+    priority: 'MEDIUM',
+    imageUrl: '' 
+  });
   const [loading, setLoading] = useState(false);
   
   const calculateTaskStats = () => {
     const total = tasks.length;
-    const completed = tasks.filter(task => task.status === 'COMPLETED').length;
-    const inProgress = tasks.filter(task => task.status === 'IN_PROGRESS').length;
-    const notStarted = tasks.filter(task => task.status === 'NOT_STARTED').length;
+    const completed = tasks.filter(task => task.completed).length;
+    const inProgress = tasks.filter(task => !task.completed && !task.overdue).length;
+    const overdue = tasks.filter(task => task.overdue).length;
     
     return {
       completed: total ? Math.round((completed / total) * 100) : 0,
       inProgress: total ? Math.round((inProgress / total) * 100) : 0,
-      notStarted: total ? Math.round((notStarted / total) * 100) : 0
+      overdue: total ? Math.round((overdue / total) * 100) : 0
     };
   };
 
@@ -71,7 +92,9 @@ const Dashboard = ({ onLogout }) => {
       const response = await axios.post(config.TODOS_URL, {
         title: newTask.title,
         description: newTask.description,
-        dueDate: dueDate
+        dueDate: dueDate,
+        priority: newTask.priority,
+        imageUrl: newTask.imageUrl
       }, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -81,7 +104,13 @@ const Dashboard = ({ onLogout }) => {
       
       setTasks([...tasks, response.data]);
       setOpenAddDialog(false);
-      setNewTask({ title: '', description: '', dueDate: '' });
+      setNewTask({ 
+        title: '', 
+        description: '', 
+        dueDate: '', 
+        priority: 'MEDIUM',
+        imageUrl: '' 
+      });
     } catch (error) {
       console.error('Failed to add task:', error);
       if (error.response?.status === 403) {
@@ -89,6 +118,19 @@ const Dashboard = ({ onLogout }) => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'HIGH':
+        return '#f44336';
+      case 'MEDIUM':
+        return '#ff9800';
+      case 'LOW':
+        return '#4caf50';
+      default:
+        return '#757575';
     }
   };
 
@@ -162,16 +204,47 @@ const Dashboard = ({ onLogout }) => {
           {/* Task List */}
           <Box className="task-list">
             {tasks.map((task) => (
-              <Box key={task.id} className="task-card">
+              <Box 
+                key={task.id} 
+                className="task-card"
+                sx={{ 
+                  borderLeft: `4px solid ${getPriorityColor(task.priority)}`,
+                  opacity: task.completed ? 0.7 : 1
+                }}
+              >
                 <Box className="task-info">
-                  <Typography variant="subtitle1">{task.title}</Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    {task.description}
+                  <Typography 
+                    variant="subtitle1"
+                    sx={{ 
+                      textDecoration: task.completed ? 'line-through' : 'none'
+                    }}
+                  >
+                    {task.title}
                   </Typography>
-                  {task.dueDate && (
+                  {task.description && (
                     <Typography variant="body2" color="textSecondary">
+                      {task.description}
+                    </Typography>
+                  )}
+                  {task.dueDate && (
+                    <Typography 
+                      variant="body2" 
+                      color={task.overdue ? "error" : "textSecondary"}
+                    >
                       Due: {new Date(task.dueDate).toLocaleDateString()}
                     </Typography>
+                  )}
+                  {task.imageUrl && (
+                    <img 
+                      src={task.imageUrl} 
+                      alt="Task attachment" 
+                      style={{ 
+                        maxWidth: '100%', 
+                        maxHeight: '200px', 
+                        marginTop: '8px',
+                        borderRadius: '4px'
+                      }} 
+                    />
                   )}
                 </Box>
               </Box>
@@ -210,6 +283,38 @@ const Dashboard = ({ onLogout }) => {
             InputLabelProps={{ shrink: true }}
             value={newTask.dueDate}
             onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+          />
+          <FormControl component="fieldset" sx={{ mt: 2 }}>
+            <FormLabel component="legend">Priority</FormLabel>
+            <RadioGroup
+              row
+              value={newTask.priority}
+              onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+            >
+              <FormControlLabel 
+                value="HIGH" 
+                control={<Radio sx={{ color: '#f44336', '&.Mui-checked': { color: '#f44336' } }} />} 
+                label="High" 
+              />
+              <FormControlLabel 
+                value="MEDIUM" 
+                control={<Radio sx={{ color: '#ff9800', '&.Mui-checked': { color: '#ff9800' } }} />} 
+                label="Medium" 
+              />
+              <FormControlLabel 
+                value="LOW" 
+                control={<Radio sx={{ color: '#4caf50', '&.Mui-checked': { color: '#4caf50' } }} />} 
+                label="Low" 
+              />
+            </RadioGroup>
+          </FormControl>
+          <TextField
+            margin="dense"
+            label="Image URL"
+            fullWidth
+            value={newTask.imageUrl}
+            onChange={(e) => setNewTask({ ...newTask, imageUrl: e.target.value })}
+            helperText="Enter a URL for task image or attachment"
           />
         </DialogContent>
         <DialogActions>

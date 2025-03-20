@@ -18,11 +18,20 @@ public class Todo {
     @Column(nullable = false)
     private String title;
     
+    @Column(columnDefinition = "TEXT")
+    private String description;
+    
     private boolean completed;
     
     private LocalDateTime dueDate;
     
     private boolean overdue;
+
+    @Enumerated(EnumType.STRING)
+    private com.example.todo.model.Priority priority = com.example.todo.model.Priority.MEDIUM;
+
+    @Column(length = 1000)
+    private String imageUrl;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
