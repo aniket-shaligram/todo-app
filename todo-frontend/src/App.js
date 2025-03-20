@@ -3,8 +3,10 @@ import axios from 'axios';
 import { BrowserRouter as Router, Route, Routes, Navigate, Link } from 'react-router-dom';
 import { Container, AppBar, Toolbar, Typography, Button, Paper } from '@mui/material';
 import AdminPortal from './components/admin/AdminPortal';
+import config from './config';
 
-const API_URL = 'http://localhost:8080/api';
+const API_URL = config.API_URL;
+const AUTH_TOKEN_KEY = config.AUTH_TOKEN_KEY;
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -15,7 +17,7 @@ function App() {
   const [loginError, setLoginError] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
     if (token) {
       setIsAuthenticated(true);
       checkAdminStatus();
@@ -26,7 +28,7 @@ function App() {
   const checkAdminStatus = async () => {
     try {
       const response = await axios.get(`${API_URL}/admin/tenants`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem(AUTH_TOKEN_KEY)}` }
       });
       setIsAdmin(true);
     } catch (error) {
@@ -39,7 +41,7 @@ function App() {
     setLoginError(''); // Clear previous errors
     try {
       const response = await axios.post(`${API_URL}/auth/login`, loginData);
-      localStorage.setItem('token', response.data.token);
+      localStorage.setItem(AUTH_TOKEN_KEY, response.data.token);
       setIsAuthenticated(true);
       checkAdminStatus();
       fetchTodos();
@@ -56,7 +58,7 @@ function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem(AUTH_TOKEN_KEY);
     setIsAuthenticated(false);
     setIsAdmin(false);
     setTodos([]);
@@ -65,7 +67,7 @@ function App() {
   const fetchTodos = async () => {
     try {
       const response = await axios.get(`${API_URL}/todos`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem(AUTH_TOKEN_KEY)}` }
       });
       setTodos(response.data);
     } catch (error) {
@@ -82,7 +84,7 @@ function App() {
         title: newTodo,
         completed: false
       }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem(AUTH_TOKEN_KEY)}` }
       });
       setTodos([...todos, response.data]);
       setNewTodo('');
@@ -97,7 +99,7 @@ function App() {
         ...todo,
         completed: !todo.completed
       }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem(AUTH_TOKEN_KEY)}` }
       });
       setTodos(todos.map(t => t.id === todo.id ? response.data : t));
     } catch (error) {
@@ -108,7 +110,7 @@ function App() {
   const deleteTodo = async (id) => {
     try {
       await axios.delete(`${API_URL}/todos/${id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem(AUTH_TOKEN_KEY)}` }
       });
       setTodos(todos.filter(todo => todo.id !== id));
     } catch (error) {

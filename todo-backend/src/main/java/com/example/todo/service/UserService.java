@@ -3,6 +3,7 @@ package com.example.todo.service;
 import com.example.todo.model.User;
 import com.example.todo.model.Subscription;
 import com.example.todo.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -18,6 +19,15 @@ public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${app.admin.default-email}")
+    private String defaultAdminEmail;
+
+    @Value("${app.admin.default-password}")
+    private String defaultAdminPassword;
+
+    @Value("${app.admin.default-name}")
+    private String defaultAdminName;
 
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
@@ -94,7 +104,7 @@ public class UserService implements UserDetailsService {
     // Create initial admin user if none exists
     public void createInitialAdminIfNeeded() {
         if (userRepository.count() == 0) {
-            registerUser("admin@example.com", "admin123", "Admin User", true);
+            registerUser(defaultAdminEmail, defaultAdminPassword, defaultAdminName, true);
         }
         // Add additional admin user if it doesn't exist
         if (userRepository.findByEmail("admin@thermax.com").isEmpty()) {

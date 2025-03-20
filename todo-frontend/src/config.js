@@ -1,9 +1,10 @@
 const config = {
-  API_URL: 'http://localhost:8080/api',
-  AUTH_TOKEN_KEY: 'token',
+  API_URL: process.env.REACT_APP_API_URL,
+  AUTH_TOKEN_KEY: process.env.REACT_APP_AUTH_TOKEN_KEY,
   SUBSCRIPTION_TIERS: {
     FREE: 'FREE',
-    PRO: 'PRO',
+    BASIC: 'BASIC',
+    PREMIUM: 'PREMIUM',
     ENTERPRISE: 'ENTERPRISE'
   }
 };
