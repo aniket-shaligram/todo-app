@@ -65,7 +65,14 @@ const Dashboard = ({ onLogout }) => {
         return;
       }
 
-      const response = await axios.post(config.TODOS_URL, newTask, {
+      // Convert date string to ISO format with time
+      const dueDate = newTask.dueDate ? new Date(newTask.dueDate).toISOString() : null;
+
+      const response = await axios.post(config.TODOS_URL, {
+        title: newTask.title,
+        description: newTask.description,
+        dueDate: dueDate
+      }, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -182,6 +189,7 @@ const Dashboard = ({ onLogout }) => {
             margin="dense"
             label="Title"
             fullWidth
+            required
             value={newTask.title}
             onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
           />
@@ -197,7 +205,7 @@ const Dashboard = ({ onLogout }) => {
           <TextField
             margin="dense"
             label="Due Date"
-            type="date"
+            type="datetime-local"
             fullWidth
             InputLabelProps={{ shrink: true }}
             value={newTask.dueDate}
@@ -208,7 +216,11 @@ const Dashboard = ({ onLogout }) => {
           <Button onClick={() => setOpenAddDialog(false)} color="primary">
             Cancel
           </Button>
-          <Button onClick={handleAddTask} color="primary" disabled={loading}>
+          <Button 
+            onClick={handleAddTask} 
+            color="primary" 
+            disabled={loading || !newTask.title}
+          >
             Add
           </Button>
         </DialogActions>
