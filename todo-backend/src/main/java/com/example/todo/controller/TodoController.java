@@ -9,7 +9,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -46,10 +48,16 @@ public class TodoController {
 
     @PostMapping
     @Transactional
-    public ResponseEntity<Todo> createTodo(@RequestBody Todo todo) {
+    public ResponseEntity<Todo> createTodo(@RequestBody TodoRequest todoRequest) {
         try {
             User currentUser = getCurrentUser();
+            
+            Todo todo = new Todo();
+            todo.setTitle(todoRequest.getTitle());
+            todo.setCompleted(false);
+            todo.setDueDate(todoRequest.getDueDate());
             todo.setUser(currentUser);
+            
             Todo savedTodo = todoRepository.save(todo);
             return ResponseEntity.ok(savedTodo);
         } catch (Exception e) {
@@ -59,7 +67,7 @@ public class TodoController {
 
     @PutMapping("/{id}")
     @Transactional
-    public ResponseEntity<Todo> updateTodo(@PathVariable Long id, @RequestBody Todo todoDetails) {
+    public ResponseEntity<Todo> updateTodo(@PathVariable Long id, @RequestBody TodoRequest todoRequest) {
         try {
             User currentUser = getCurrentUser();
             
@@ -70,8 +78,11 @@ public class TodoController {
                 return ResponseEntity.status(403).build();
             }
 
-            todo.setTitle(todoDetails.getTitle());
-            todo.setCompleted(todoDetails.isCompleted());
+            todo.setTitle(todoRequest.getTitle());
+            todo.setCompleted(todoRequest.isCompleted());
+            if (todoRequest.getDueDate() != null) {
+                todo.setDueDate(todoRequest.getDueDate());
+            }
 
             Todo updatedTodo = todoRepository.save(todo);
             return ResponseEntity.ok(updatedTodo);
@@ -99,4 +110,23 @@ public class TodoController {
             return ResponseEntity.internalServerError().build();
         }
     }
+    
+    @GetMapping("/overdue")
+    @Transactional(readOnly = true)
+    public ResponseEntity<List<Todo>> getOverdueTodos() {
+        try {
+            User currentUser = getCurrentUser();
+            List<Todo> overdueTodos = todoRepository.findByUserAndDueDateBeforeAndCompletedFalse(currentUser, LocalDateTime.now());
+            return ResponseEntity.ok(overdueTodos);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+}
+
+@Data
+class TodoRequest {
+    private String title;
+    private boolean completed;
+    private LocalDateTime dueDate;
 }

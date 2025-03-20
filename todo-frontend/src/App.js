@@ -1,18 +1,100 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import axios from 'axios';
 import { BrowserRouter as Router, Route, Routes, Navigate, Link } from 'react-router-dom';
-import { Container, AppBar, Toolbar, Typography, Button, Paper } from '@mui/material';
+import { Container, AppBar, Toolbar, Typography, Button, Paper, TextField, List, ListItem, ListItemText, ListItemSecondaryAction, IconButton, Checkbox, Box, Chip, FormControlLabel } from '@mui/material';
+import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
 import AdminPortal from './components/admin/AdminPortal';
 import config from './config';
 
 const API_URL = config.API_URL;
 const AUTH_TOKEN_KEY = config.AUTH_TOKEN_KEY;
 
+const TodoDatePicker = memo(({ value, onChange }) => (
+  <LocalizationProvider dateAdapter={AdapterDayjs}>
+    <DateTimePicker
+      label="Due Date (optional)"
+      value={value}
+      onChange={onChange}
+      slotProps={{ textField: { fullWidth: true } }}
+    />
+  </LocalizationProvider>
+));
+
+const TodoForm = memo(({ onSubmit }) => {
+  const [title, setTitle] = useState('');
+  const [dueDate, setDueDate] = useState(null);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    onSubmit({ title, dueDate: dueDate ? dueDate.toISOString() : null });
+    setTitle('');
+    setDueDate(null);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} style={{ marginBottom: 20 }}>
+      <Box display="flex" flexDirection="column" gap={2}>
+        <TextField
+          fullWidth
+          label="New Todo"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          autoComplete="off"
+        />
+        <TodoDatePicker
+          value={dueDate}
+          onChange={setDueDate}
+        />
+        <Button type="submit" variant="contained" color="primary">
+          Add Todo
+        </Button>
+      </Box>
+    </form>
+  );
+});
+
+const TodoItem = memo(({ todo, onToggle, onDelete }) => (
+  <ListItem divider>
+    <Checkbox
+      checked={todo.completed}
+      onChange={() => onToggle(todo)}
+      color="primary"
+    />
+    <ListItemText
+      primary={todo.title}
+      secondary={todo.dueDate && (
+        <Box display="flex" gap={1} mt={0.5}>
+          <Chip
+            label={`Due: ${dayjs(todo.dueDate).format('MMM D, YYYY h:mm A')}`}
+            color={todo.overdue ? "error" : "default"}
+            size="small"
+          />
+          {todo.overdue && !todo.completed && (
+            <Chip label="OVERDUE" color="error" size="small" />
+          )}
+        </Box>
+      )}
+      style={{
+        textDecoration: todo.completed ? 'line-through' : 'none',
+        color: todo.completed ? 'gray' : 'inherit'
+      }}
+    />
+    <ListItemSecondaryAction>
+      <IconButton edge="end" onClick={() => onDelete(todo.id)}>
+        🗑️
+      </IconButton>
+    </ListItemSecondaryAction>
+  </ListItem>
+));
+
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [todos, setTodos] = useState([]);
-  const [newTodo, setNewTodo] = useState('');
+  const [showOverdueOnly, setShowOverdueOnly] = useState(false);
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [loginError, setLoginError] = useState('');
 
@@ -38,7 +120,7 @@ function App() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoginError(''); // Clear previous errors
+    setLoginError('');
     try {
       const response = await axios.post(`${API_URL}/auth/login`, loginData);
       localStorage.setItem(AUTH_TOKEN_KEY, response.data.token);
@@ -64,155 +146,185 @@ function App() {
     setTodos([]);
   };
 
-  const fetchTodos = async () => {
+  const fetchTodos = useCallback(async () => {
     try {
-      const response = await axios.get(`${API_URL}/todos`, {
+      const endpoint = showOverdueOnly ? `${API_URL}/todos/overdue` : `${API_URL}/todos`;
+      const response = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${localStorage.getItem(AUTH_TOKEN_KEY)}` }
       });
       setTodos(response.data);
     } catch (error) {
       console.error('Error fetching todos:', error);
     }
-  };
+  }, [showOverdueOnly]);
 
-  const addTodo = async (e) => {
-    e.preventDefault();
-    if (!newTodo.trim()) return;
-
+  const addTodo = useCallback(async (todoData) => {
     try {
       const response = await axios.post(`${API_URL}/todos`, {
-        title: newTodo,
-        completed: false
+        title: todoData.title,
+        completed: false,
+        dueDate: todoData.dueDate
       }, {
         headers: { Authorization: `Bearer ${localStorage.getItem(AUTH_TOKEN_KEY)}` }
       });
-      setTodos([...todos, response.data]);
-      setNewTodo('');
+      setTodos(prevTodos => [...prevTodos, response.data]);
     } catch (error) {
       console.error('Error adding todo:', error);
     }
-  };
+  }, []);
 
-  const toggleTodo = async (todo) => {
+  const toggleTodo = useCallback(async (todo) => {
     try {
       const response = await axios.put(`${API_URL}/todos/${todo.id}`, {
-        ...todo,
-        completed: !todo.completed
+        title: todo.title,
+        completed: !todo.completed,
+        dueDate: todo.dueDate
       }, {
         headers: { Authorization: `Bearer ${localStorage.getItem(AUTH_TOKEN_KEY)}` }
       });
-      setTodos(todos.map(t => t.id === todo.id ? response.data : t));
+      setTodos(prevTodos => prevTodos.map(t => t.id === todo.id ? response.data : t));
     } catch (error) {
       console.error('Error updating todo:', error);
     }
-  };
+  }, []);
 
-  const deleteTodo = async (id) => {
+  const deleteTodo = useCallback(async (id) => {
     try {
       await axios.delete(`${API_URL}/todos/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem(AUTH_TOKEN_KEY)}` }
       });
-      setTodos(todos.filter(todo => todo.id !== id));
+      setTodos(prevTodos => prevTodos.filter(todo => todo.id !== id));
     } catch (error) {
       console.error('Error deleting todo:', error);
     }
-  };
+  }, []);
 
-  if (!isAuthenticated) {
+  const handleOverdueToggle = useCallback((e) => {
+    setShowOverdueOnly(e.target.checked);
+    fetchTodos();
+  }, [fetchTodos]);
+
+  const LoginForm = () => (
+    <Container component="main" maxWidth="xs">
+      <Paper elevation={3} style={{ padding: 20, marginTop: 50 }}>
+        <Typography variant="h5" component="h1" gutterBottom>
+          Login
+        </Typography>
+        <form onSubmit={handleLogin}>
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Email"
+            value={loginData.email}
+            onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+          />
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Password"
+            type="password"
+            value={loginData.password}
+            onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+          />
+          {loginError && (
+            <Typography color="error" variant="body2" style={{ marginTop: 10 }}>
+              {loginError}
+            </Typography>
+          )}
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            color="primary"
+            style={{ marginTop: 20 }}
+          >
+            Login
+          </Button>
+        </form>
+      </Paper>
+    </Container>
+  );
+
+  const TodoList = () => {
+    const todoItems = useMemo(() => (
+      todos.map(todo => (
+        <TodoItem
+          key={todo.id}
+          todo={todo}
+          onToggle={toggleTodo}
+          onDelete={deleteTodo}
+        />
+      ))
+    ), [todos, toggleTodo, deleteTodo]);
+
     return (
-      <Container maxWidth="sm">
-        <Paper sx={{ p: 3, mt: 4 }}>
-          <Typography variant="h4" gutterBottom>Login</Typography>
-          <form onSubmit={handleLogin}>
-            <div>
-              <input
-                type="email"
-                placeholder="Email"
-                value={loginData.email}
-                onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-              />
-            </div>
-            <div>
-              <input
-                type="password"
-                placeholder="Password"
-                value={loginData.password}
-                onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-              />
-            </div>
-            {loginError && (
-              <Typography color="error" sx={{ mt: 2 }}>
-                {loginError}
-              </Typography>
-            )}
-            <Button type="submit" variant="contained" color="primary">
-              Login
-            </Button>
-          </form>
+      <Container>
+        <Paper elevation={3} style={{ padding: 20, marginTop: 20 }}>
+          <TodoForm onSubmit={addTodo} />
+
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+            <Typography variant="h6">Your Todos</Typography>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={showOverdueOnly}
+                  onChange={handleOverdueToggle}
+                />
+              }
+              label="Show Overdue Only"
+            />
+          </Box>
+
+          <List>
+            {todoItems}
+          </List>
         </Paper>
       </Container>
     );
-  }
+  };
 
   return (
     <Router>
       <div>
         <AppBar position="static">
           <Toolbar>
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            <Typography variant="h6" style={{ flexGrow: 1 }}>
               Todo App
             </Typography>
-            {isAdmin && (
-              <Button color="inherit" component={Link} to="/admin">
-                Admin Portal
-              </Button>
+            {isAuthenticated && (
+              <>
+                {isAdmin && (
+                  <Button color="inherit" component={Link} to="/admin" style={{ marginRight: 10 }}>
+                    Admin Portal
+                  </Button>
+                )}
+                <Button color="inherit" onClick={handleLogout}>
+                  Logout
+                </Button>
+              </>
             )}
-            <Button color="inherit" component={Link} to="/">
-              Todos
-            </Button>
-            <Button color="inherit" onClick={handleLogout}>
-              Logout
-            </Button>
           </Toolbar>
         </AppBar>
 
         <Routes>
-          <Route path="/admin" element={isAdmin ? <AdminPortal /> : <Navigate to="/" />} />
+          <Route
+            path="/admin"
+            element={
+              isAuthenticated && isAdmin ? (
+                <AdminPortal />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
           <Route
             path="/"
             element={
-              <Container maxWidth="md" sx={{ mt: 4 }}>
-                <Paper sx={{ p: 3 }}>
-                  <Typography variant="h4" gutterBottom>Todo List</Typography>
-                  <form onSubmit={addTodo}>
-                    <input
-                      type="text"
-                      className="todo-input"
-                      value={newTodo}
-                      onChange={(e) => setNewTodo(e.target.value)}
-                      placeholder="Add a new todo"
-                    />
-                  </form>
-                  <ul className="todo-list">
-                    {todos.map(todo => (
-                      <li key={todo.id} className={`todo-item ${todo.completed ? 'completed' : ''}`}>
-                        <input
-                          type="checkbox"
-                          checked={todo.completed}
-                          onChange={() => toggleTodo(todo)}
-                        />
-                        <span>{todo.title}</span>
-                        <button
-                          className="delete-btn"
-                          onClick={() => deleteTodo(todo.id)}
-                        >
-                          Delete
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </Paper>
-              </Container>
+              isAuthenticated ? (
+                <TodoList />
+              ) : (
+                <LoginForm />
+              )
             }
           />
         </Routes>
