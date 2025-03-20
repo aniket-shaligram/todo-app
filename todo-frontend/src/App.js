@@ -5,7 +5,7 @@ import { Box } from '@mui/material';
 import Dashboard from './components/Dashboard/Dashboard';
 import Sidebar from './components/Sidebar/Sidebar';
 import axios from 'axios';
-import config from './config';
+import { config } from './config';
 
 const theme = createTheme({
   palette: {
