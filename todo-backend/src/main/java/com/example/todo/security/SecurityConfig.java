@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
@@ -44,6 +45,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         logger.debug("Configuring SecurityFilterChain");
+        
         http
             .cors(cors -> {
                 logger.debug("Configuring CORS");
@@ -56,18 +58,20 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> {
                 logger.debug("Configuring authorization rules");
                 auth
-                    .requestMatchers("/api/auth/login").permitAll()
-                    .requestMatchers("/api/auth/register").permitAll()
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                    .requestMatchers("/auth/login").permitAll()
+                    .requestMatchers("/auth/register").permitAll()
                     .requestMatchers("/h2-console/**").permitAll()
                     .requestMatchers("/error").permitAll()
                     .anyRequest().authenticated();
+                logger.debug("Authorization rules configured");
             })
             .sessionManagement(session -> {
                 logger.debug("Setting session management policy to STATELESS");
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
             })
-            .authenticationProvider(authenticationProvider())
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+            .authenticationProvider(authenticationProvider());
 
         logger.debug("SecurityFilterChain configuration completed");
         return http.build();
@@ -94,13 +98,14 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Collections.singletonList("http://localhost:3000"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setExposedHeaders(Arrays.asList("Access-Control-Allow-Origin", "Access-Control-Allow-Credentials"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+        logger.debug("CORS configuration completed");
         return source;
     }
 }
