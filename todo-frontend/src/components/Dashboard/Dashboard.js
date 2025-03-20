@@ -14,17 +14,24 @@ import {
   Radio,
   FormControl,
   FormLabel,
-  Checkbox,
-  Menu,
-  MenuItem,
-  Tooltip
+  Avatar,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  CircularProgress
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import CategoryIcon from '@mui/icons-material/Category';
+import SettingsIcon from '@mui/icons-material/Settings';
+import HelpIcon from '@mui/icons-material/Help';
+import LogoutIcon from '@mui/icons-material/Logout';
 import AddIcon from '@mui/icons-material/Add';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import DeleteIcon from '@mui/icons-material/Delete';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import axios from 'axios';
 import { config } from '../../config';
 import './Dashboard.css';
@@ -41,20 +48,18 @@ const Dashboard = ({ onLogout }) => {
     imageUrl: '' 
   });
   const [loading, setLoading] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [selectedTask, setSelectedTask] = useState(null);
-  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  
+  const [activeNav, setActiveNav] = useState('dashboard');
+
   const calculateTaskStats = () => {
     const total = tasks.length;
     const completed = tasks.filter(task => task.completed).length;
     const inProgress = tasks.filter(task => !task.completed && !task.overdue).length;
-    const overdue = tasks.filter(task => task.overdue).length;
+    const notStarted = tasks.filter(task => !task.completed && task.overdue).length;
     
     return {
       completed: total ? Math.round((completed / total) * 100) : 0,
       inProgress: total ? Math.round((inProgress / total) * 100) : 0,
-      overdue: total ? Math.round((overdue / total) * 100) : 0
+      notStarted: total ? Math.round((notStarted / total) * 100) : 0
     };
   };
 
@@ -95,7 +100,6 @@ const Dashboard = ({ onLogout }) => {
         return;
       }
 
-      // Convert date string to ISO format with time
       const dueDate = newTask.dueDate ? new Date(newTask.dueDate).toISOString() : null;
 
       const response = await axios.post(config.TODOS_URL, {
@@ -158,235 +162,258 @@ const Dashboard = ({ onLogout }) => {
     }
   };
 
-  const handleDeleteTask = async () => {
-    if (!selectedTask) return;
-
-    try {
-      const token = localStorage.getItem(config.AUTH_TOKEN_KEY);
-      if (!token) {
-        console.error('No auth token found');
-        onLogout();
-        return;
-      }
-
-      await axios.delete(`${config.TODOS_URL}/${selectedTask.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      setTasks(tasks.filter(t => t.id !== selectedTask.id));
-      setOpenDeleteDialog(false);
-      setSelectedTask(null);
-    } catch (error) {
-      console.error('Failed to delete task:', error);
-      if (error.response?.status === 403) {
-        onLogout();
-      }
-    }
-  };
-
-  const handleMenuOpen = (event, task) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedTask(task);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'HIGH':
-        return '#f44336';
-      case 'MEDIUM':
-        return '#ff9800';
-      case 'LOW':
-        return '#4caf50';
-      default:
-        return '#757575';
-    }
-  };
-
   const stats = calculateTaskStats();
-  const today = new Date();
-  const formattedDate = today.toLocaleDateString('en-US', { 
-    weekday: 'long',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  });
+  const completedTasks = tasks.filter(task => task.completed);
 
   return (
     <div className="dashboard-container">
-      {/* Header */}
-      <Box className="dashboard-header">
-        <Box className="search-bar">
-          <TextField
-            placeholder="Search your task here..."
-            variant="outlined"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            fullWidth
-            InputProps={{
-              endAdornment: (
-                <IconButton>
-                  <SearchIcon />
-                </IconButton>
-              ),
-            }}
+      {/* Sidebar */}
+      <div className="sidebar">
+        <div className="user-profile">
+          <Avatar
+            alt="User Avatar"
+            src="/avatar.jpg"
+            className="avatar"
           />
-        </Box>
-        <Box className="header-actions">
-          <IconButton>
-            <NotificationsIcon />
-          </IconButton>
-          <IconButton>
-            <CalendarMonthIcon />
-          </IconButton>
-          <Typography variant="body2" color="textSecondary">
-            {formattedDate}
-          </Typography>
-          <Button onClick={onLogout} color="primary" variant="outlined">
-            Logout
-          </Button>
-        </Box>
-      </Box>
+          <Typography className="user-name">Sundar Gurung</Typography>
+          <Typography className="user-email">sundar.gurung360@gmail.com</Typography>
+        </div>
 
-      {/* Welcome Section */}
-      <Box className="welcome-section">
-        <Typography variant="h4" component="h1">
-          Welcome back! 👋
-        </Typography>
-      </Box>
+        <List className="nav-menu">
+          <ListItem 
+            button 
+            className={`nav-item ${activeNav === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setActiveNav('dashboard')}
+          >
+            <ListItemIcon>
+              <DashboardIcon />
+            </ListItemIcon>
+            <ListItemText primary="Dashboard" />
+          </ListItem>
+          <ListItem 
+            button 
+            className={`nav-item ${activeNav === 'tasks' ? 'active' : ''}`}
+            onClick={() => setActiveNav('tasks')}
+          >
+            <ListItemIcon>
+              <AssignmentIcon />
+            </ListItemIcon>
+            <ListItemText primary="My Tasks" />
+          </ListItem>
+          <ListItem 
+            button 
+            className={`nav-item ${activeNav === 'categories' ? 'active' : ''}`}
+            onClick={() => setActiveNav('categories')}
+          >
+            <ListItemIcon>
+              <CategoryIcon />
+            </ListItemIcon>
+            <ListItemText primary="Categories" />
+          </ListItem>
+          <ListItem 
+            button 
+            className={`nav-item ${activeNav === 'settings' ? 'active' : ''}`}
+            onClick={() => setActiveNav('settings')}
+          >
+            <ListItemIcon>
+              <SettingsIcon />
+            </ListItemIcon>
+            <ListItemText primary="Settings" />
+          </ListItem>
+          <ListItem 
+            button 
+            className={`nav-item ${activeNav === 'help' ? 'active' : ''}`}
+            onClick={() => setActiveNav('help')}
+          >
+            <ListItemIcon>
+              <HelpIcon />
+            </ListItemIcon>
+            <ListItemText primary="Help" />
+          </ListItem>
+          <ListItem 
+            button 
+            className="nav-item"
+            onClick={onLogout}
+          >
+            <ListItemIcon>
+              <LogoutIcon />
+            </ListItemIcon>
+            <ListItemText primary="Logout" />
+          </ListItem>
+        </List>
+      </div>
 
       {/* Main Content */}
-      <Box className="dashboard-content">
-        <Box className="tasks-section">
-          <Box className="section-header">
-            <Typography variant="h6">To-Do</Typography>
-            <Button
-              startIcon={<AddIcon />}
-              onClick={() => setOpenAddDialog(true)}
-              color="primary"
-              variant="contained"
-            >
-              Add task
-            </Button>
-          </Box>
-          
-          {/* Task List */}
-          <Box className="task-list">
-            {tasks.map((task) => (
-              <Box 
-                key={task.id} 
-                className="task-card"
-                sx={{ 
-                  borderLeft: `4px solid ${getPriorityColor(task.priority)}`,
-                  opacity: task.completed ? 0.7 : 1
+      <div className="main-content">
+        {/* Header */}
+        <div className="header">
+          <Typography className="welcome-text">
+            Welcome back, Sundar 👋
+          </Typography>
+          <div className="header-right">
+            <div className="search-bar">
+              <TextField
+                placeholder="Search your task here..."
+                variant="outlined"
+                fullWidth
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                InputProps={{
+                  endAdornment: <SearchIcon className="search-icon" />
                 }}
+              />
+            </div>
+            <IconButton>
+              <NotificationsIcon />
+            </IconButton>
+            <IconButton>
+              <CalendarMonthIcon />
+            </IconButton>
+            <button className="invite-button">
+              <PersonAddIcon />
+              Invite
+            </button>
+          </div>
+        </div>
+
+        {/* Task Container */}
+        <div className="task-container">
+          {/* Tasks Section */}
+          <div className="task-section">
+            <div className="section-header">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Typography variant="h6">To-Do</Typography>
+                <Typography color="textSecondary">
+                  {new Date().toLocaleDateString('en-US', { 
+                    day: 'numeric',
+                    month: 'long'
+                  })}
+                </Typography>
+              </Box>
+              <Button
+                startIcon={<AddIcon />}
+                onClick={() => setOpenAddDialog(true)}
+                variant="contained"
+                sx={{ bgcolor: '#ff6b6b', '&:hover': { bgcolor: '#ff5252' } }}
               >
-                <Box className="task-info">
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Checkbox
-                      checked={task.completed}
-                      onChange={() => handleToggleComplete(task)}
-                      color="primary"
-                    />
-                    <Typography 
-                      variant="subtitle1"
-                      sx={{ 
-                        textDecoration: task.completed ? 'line-through' : 'none',
-                        flex: 1
-                      }}
-                    >
+                Add task
+              </Button>
+            </div>
+            
+            <div className="task-list">
+              {tasks.filter(task => !task.completed).map((task) => (
+                <div key={task.id} className="task-card">
+                  <div 
+                    className={`task-status ${task.completed ? 'completed' : ''}`}
+                    onClick={() => handleToggleComplete(task)}
+                  />
+                  <div className="task-content">
+                    <Typography className="task-title">
                       {task.title}
                     </Typography>
-                    <Tooltip title="Task actions">
-                      <IconButton
-                        size="small"
-                        onClick={(e) => handleMenuOpen(e, task)}
-                      >
-                        <MoreVertIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                  {task.description && (
-                    <Typography variant="body2" color="textSecondary" sx={{ ml: 4 }}>
-                      {task.description}
-                    </Typography>
-                  )}
-                  {task.dueDate && (
-                    <Typography 
-                      variant="body2" 
-                      color={task.overdue ? "error" : "textSecondary"}
-                      sx={{ ml: 4 }}
-                    >
-                      Due: {new Date(task.dueDate).toLocaleDateString()}
-                    </Typography>
-                  )}
+                    {task.description && (
+                      <Typography className="task-description">
+                        {task.description}
+                      </Typography>
+                    )}
+                    <div className="task-meta">
+                      <span>Priority: {task.priority}</span>
+                      {task.dueDate && (
+                        <span>
+                          Due: {new Date(task.dueDate).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                   {task.imageUrl && (
-                    <Box sx={{ ml: 4, mt: 1 }}>
-                      <img 
-                        src={task.imageUrl} 
-                        alt="Task attachment" 
-                        style={{ 
-                          maxWidth: '100%', 
-                          maxHeight: '200px', 
-                          borderRadius: '4px'
-                        }} 
-                      />
-                    </Box>
+                    <img 
+                      src={task.imageUrl} 
+                      alt="Task attachment"
+                      className="task-image"
+                    />
                   )}
-                </Box>
-              </Box>
-            ))}
-          </Box>
-        </Box>
-      </Box>
+                </div>
+              ))}
+            </div>
+          </div>
 
-      {/* Task Menu */}
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-      >
-        <MenuItem 
-          onClick={() => {
-            handleMenuClose();
-            setOpenDeleteDialog(true);
-          }}
-          sx={{ color: 'error.main' }}
-        >
-          <DeleteIcon sx={{ mr: 1 }} />
-          Delete
-        </MenuItem>
-      </Menu>
+          {/* Status Section */}
+          <div className="status-section">
+            <Typography variant="h6" gutterBottom>
+              Task Status
+            </Typography>
+            
+            <div className="status-charts">
+              <div className="chart-container">
+                <CircularProgress 
+                  variant="determinate" 
+                  value={stats.completed} 
+                  size={120}
+                  thickness={8}
+                  sx={{ color: '#4caf50' }}
+                />
+                <Typography>
+                  Completed ({stats.completed}%)
+                </Typography>
+              </div>
+              <div className="chart-container">
+                <CircularProgress 
+                  variant="determinate" 
+                  value={stats.inProgress} 
+                  size={120}
+                  thickness={8}
+                  sx={{ color: '#2196f3' }}
+                />
+                <Typography>
+                  In Progress ({stats.inProgress}%)
+                </Typography>
+              </div>
+              <div className="chart-container">
+                <CircularProgress 
+                  variant="determinate" 
+                  value={stats.notStarted} 
+                  size={120}
+                  thickness={8}
+                  sx={{ color: '#f44336' }}
+                />
+                <Typography>
+                  Not Started ({stats.notStarted}%)
+                </Typography>
+              </div>
+            </div>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={openDeleteDialog}
-        onClose={() => setOpenDeleteDialog(false)}
-      >
-        <DialogTitle>Delete Task</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete this task? This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDeleteDialog(false)}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleDeleteTask} 
-            color="error"
-            variant="contained"
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+            <div className="completed-tasks">
+              <Typography variant="h6" gutterBottom>
+                Completed Tasks
+              </Typography>
+              {completedTasks.slice(0, 3).map((task) => (
+                <div key={task.id} className="completed-task-card">
+                  {task.imageUrl ? (
+                    <img 
+                      src={task.imageUrl} 
+                      alt="Task" 
+                      className="completed-task-image"
+                    />
+                  ) : (
+                    <div 
+                      className="completed-task-image" 
+                      style={{ background: '#f5f5f5' }}
+                    />
+                  )}
+                  <div className="completed-task-content">
+                    <Typography className="completed-task-title">
+                      {task.title}
+                    </Typography>
+                    <Typography className="completed-task-date">
+                      Completed {new Date(task.dueDate).toLocaleDateString()}
+                    </Typography>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Add Task Dialog */}
       <Dialog open={openAddDialog} onClose={() => setOpenAddDialog(false)}>
@@ -453,13 +480,18 @@ const Dashboard = ({ onLogout }) => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenAddDialog(false)} color="primary">
+          <Button onClick={() => setOpenAddDialog(false)}>
             Cancel
           </Button>
           <Button 
             onClick={handleAddTask} 
-            color="primary" 
             disabled={loading || !newTask.title}
+            sx={{ 
+              bgcolor: '#ff6b6b', 
+              color: 'white',
+              '&:hover': { bgcolor: '#ff5252' },
+              '&:disabled': { bgcolor: '#ffcdd2' }
+            }}
           >
             Add
           </Button>
