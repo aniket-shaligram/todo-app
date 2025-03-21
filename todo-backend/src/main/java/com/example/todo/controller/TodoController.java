@@ -132,4 +132,31 @@ public class TodoController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    @PatchMapping("/{id}/complete")
+    @Transactional
+    public ResponseEntity<Todo> toggleTodoComplete(@PathVariable Long id) {
+        try {
+            User currentUser = getCurrentUser();
+            
+            Todo todo = todoRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Todo not found"));
+            
+            if (!todo.getUser().getId().equals(currentUser.getId())) {
+                return ResponseEntity.status(403).build();
+            }
+
+            todo.setCompleted(!todo.isCompleted());
+            if (todo.isCompleted()) {
+                todo.setStatus(Status.COMPLETED);
+            } else {
+                todo.setStatus(Status.IN_PROGRESS);
+            }
+
+            Todo updatedTodo = todoRepository.save(todo);
+            return ResponseEntity.ok(updatedTodo);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 }
