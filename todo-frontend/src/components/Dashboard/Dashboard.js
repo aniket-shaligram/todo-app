@@ -70,6 +70,32 @@ const Dashboard = ({ onLogout, user }) => {
     setSelectedTask(null);
   };
 
+  const toggleTaskComplete = async (task) => {
+    try {
+      const token = localStorage.getItem(config.AUTH_TOKEN_KEY);
+      if (!token) {
+        console.error('No auth token found');
+        onLogout();
+        return;
+      }
+
+      const response = await axios.patch(`${config.TODOS_URL}/${task.id}/complete`, null, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      setTasks(tasks.map(t => t.id === task.id ? response.data : t));
+      handleMenuClose();
+    } catch (error) {
+      console.error('Failed to toggle task completion:', error);
+      if (error.response?.status === 403) {
+        onLogout();
+      }
+    }
+  };
+
   const handleStatusChange = async (task, newStatus) => {
     try {
       const token = localStorage.getItem(config.AUTH_TOKEN_KEY);
@@ -470,16 +496,16 @@ const Dashboard = ({ onLogout, user }) => {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
+        {selectedTask?.status !== 'COMPLETED' && (
+          <MenuItem onClick={() => toggleTaskComplete(selectedTask)}>
+            <CheckCircleIcon sx={{ mr: 1, color: '#4caf50' }} />
+            {selectedTask?.status === 'COMPLETED' ? 'Mark as Incomplete' : 'Mark as Complete'}
+          </MenuItem>
+        )}
         {selectedTask?.status === 'NOT_STARTED' && (
           <MenuItem onClick={() => handleStatusChange(selectedTask, 'IN_PROGRESS')}>
             <PlayArrowIcon sx={{ mr: 1, color: '#2196f3' }} />
             Start Task
-          </MenuItem>
-        )}
-        {selectedTask?.status === 'IN_PROGRESS' && (
-          <MenuItem onClick={() => handleStatusChange(selectedTask, 'COMPLETED')}>
-            <CheckCircleIcon sx={{ mr: 1, color: '#4caf50' }} />
-            Complete Task
           </MenuItem>
         )}
       </Menu>
