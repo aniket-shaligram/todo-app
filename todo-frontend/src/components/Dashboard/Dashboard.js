@@ -10,6 +10,7 @@ import {
   ListItemIcon,
   ListItemText,
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
@@ -28,6 +29,7 @@ import CompletedTasks from '../Todo/CompletedTasks';
 import './Dashboard.css';
 
 const Dashboard = ({ onLogout, user }) => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [tasks, setTasks] = useState([]);
   const [activeNav, setActiveNav] = useState('dashboard');
@@ -107,12 +109,15 @@ const Dashboard = ({ onLogout, user }) => {
             <ListItemIcon>
               <CategoryIcon />
             </ListItemIcon>
-            <ListItemText primary="Categories" />
+            <ListItemText primary="Task Categories" />
           </ListItem>
           <ListItem 
             button 
             className={`nav-item ${activeNav === 'settings' ? 'active' : ''}`}
-            onClick={() => setActiveNav('settings')}
+            onClick={() => {
+              setActiveNav('settings');
+              navigate('/settings');
+            }}
           >
             <ListItemIcon>
               <SettingsIcon />

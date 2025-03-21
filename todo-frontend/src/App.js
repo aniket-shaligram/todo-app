@@ -10,6 +10,7 @@ import theme from './theme';
 import Login from './components/Login/Login';
 import Register from './components/Register/Register';
 import Dashboard from './components/Dashboard/Dashboard';
+import AccountInfo from './components/Account/AccountInfo';
 import './App.css';
 
 function App() {
@@ -85,6 +86,16 @@ function App() {
                 element={
                   isAuthenticated ? (
                     <Dashboard onLogout={handleLogout} user={user} />
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  isAuthenticated ? (
+                    <AccountInfo user={user} onLogout={handleLogout} />
                   ) : (
                     <Navigate to="/login" replace />
                   )
