@@ -23,7 +23,7 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
-    private final JwtService jwtService;
+    private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsService userDetailsService;
     
     @Value("${app.auth.token-prefix}")
@@ -32,8 +32,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Value("${app.auth.header-name}")
     private String headerName;
 
-    public JwtAuthenticationFilter(JwtService jwtService, UserDetailsService userDetailsService) {
-        this.jwtService = jwtService;
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, UserDetailsService userDetailsService) {
+        this.jwtTokenProvider = jwtTokenProvider;
         this.userDetailsService = userDetailsService;
     }
 
@@ -56,13 +56,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             logger.debug("JWT token found: {}", jwt != null);
 
             if (StringUtils.hasText(jwt)) {
-                String username = jwtService.extractUsername(jwt);
+                String username = jwtTokenProvider.getUserEmailFromToken(jwt);
                 logger.debug("JWT token for user: {}", username);
 
                 if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                     UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                     
-                    if (jwtService.validateToken(jwt, userDetails)) {
+                    if (jwtTokenProvider.validateToken(jwt)) {
                         UsernamePasswordAuthenticationToken authentication = 
                             new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

@@ -1,6 +1,6 @@
 package com.example.todo.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,7 +22,7 @@ public class Subscription {
     private LocalDateTime endDate;
     
     @OneToOne(mappedBy = "subscription", fetch = FetchType.LAZY)
-    @JsonIgnore
+    @JsonBackReference
     private User user;
     
     public enum SubscriptionTier {

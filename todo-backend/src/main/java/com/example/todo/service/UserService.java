@@ -15,9 +15,13 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.authentication.BadCredentialsException;
 
 @Service
 public class UserService implements UserDetailsService {
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -41,7 +45,10 @@ public class UserService implements UserDetailsService {
     }
 
     public User registerUser(String email, String password, String name, boolean isAdmin) {
+        logger.debug("Registering user: email={}, name={}, isAdmin={}", email, name, isAdmin);
+        
         if (userRepository.findByEmail(email).isPresent()) {
+            logger.error("Email already registered: {}", email);
             throw new RuntimeException("Email already registered");
         }
 
@@ -59,6 +66,7 @@ public class UserService implements UserDetailsService {
         subscription.setUser(user);
         user.setSubscription(subscription);
 
+        logger.debug("Saving new user to database");
         return userRepository.save(user);
     }
 
@@ -68,7 +76,10 @@ public class UserService implements UserDetailsService {
     }
 
     public User register(RegisterRequest request) {
+        logger.debug("Processing registration request for email: {}", request.getEmail());
+        
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            logger.error("Email already registered: {}", request.getEmail());
             throw new RuntimeException("Email already registered");
         }
         
@@ -77,24 +88,54 @@ public class UserService implements UserDetailsService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setName(request.getName());
         
+        // Create a free subscription
+        Subscription subscription = new Subscription();
+        subscription.setTier(Subscription.SubscriptionTier.FREE);
+        subscription.setStartDate(LocalDateTime.now());
+        subscription.setEndDate(LocalDateTime.now().plusYears(100)); // Effectively unlimited for free tier
+        subscription.setUser(user);
+        user.setSubscription(subscription);
+        
+        logger.debug("Saving new user from registration request");
         return userRepository.save(user);
     }
 
+    public User getUserByEmail(String email) {
+        logger.debug("Getting user by email: {}", email);
+        return userRepository.findByEmail(email)
+            .orElseThrow(() -> {
+                logger.error("User not found for email: {}", email);
+                return new UsernameNotFoundException("User not found");
+            });
+    }
+
     public User login(LoginRequest request) {
+        logger.debug("Processing login request for email: {}", request.getEmail());
+        
         User user = userRepository.findByEmail(request.getEmail())
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> {
+                logger.error("User not found for email: {}", request.getEmail());
+                return new BadCredentialsException("Invalid email or password");
+            });
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid password");
+            logger.error("Invalid password for user: {}", request.getEmail());
+            throw new BadCredentialsException("Invalid email or password");
         }
 
+        logger.debug("Login successful for user: {}", request.getEmail());
         return user;
     }
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        logger.debug("Loading UserDetails for email: {}", email);
+        
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> {
+                    logger.error("User not found for email: {}", email);
+                    return new UsernameNotFoundException("User not found");
+                });
 
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
         authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
@@ -102,6 +143,7 @@ public class UserService implements UserDetailsService {
             authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
         }
 
+        logger.debug("UserDetails loaded successfully for: {}", email);
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
                 user.getPassword(),
@@ -110,13 +152,21 @@ public class UserService implements UserDetailsService {
     }
 
     public User upgradeSubscription(Long userId, Subscription.SubscriptionTier newTier) {
+        logger.debug("Upgrading subscription for user ID: {} to tier: {}", userId, newTier);
+        
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> {
+                    logger.error("User not found for ID: {}", userId);
+                    return new RuntimeException("User not found");
+                });
 
         Subscription subscription = user.getSubscription();
+        if (subscription == null) {
+            subscription = new Subscription();
+            subscription.setUser(user);
+        }
+
         subscription.setTier(newTier);
-        
-        // Set subscription period based on tier
         subscription.setStartDate(LocalDateTime.now());
         if (newTier == Subscription.SubscriptionTier.FREE) {
             subscription.setEndDate(LocalDateTime.now().plusYears(100));
@@ -124,13 +174,19 @@ public class UserService implements UserDetailsService {
             subscription.setEndDate(LocalDateTime.now().plusMonths(1));
         }
 
+        logger.debug("Saving user with upgraded subscription");
         return userRepository.save(user);
     }
 
-    // Create initial admin user if none exists
     public void createInitialAdminIfNeeded() {
-        if (userRepository.count() == 0) {
+        logger.debug("Checking if admin user needs to be created");
+        
+        if (!userRepository.findByEmail(defaultAdminEmail).isPresent()) {
+            logger.info("Creating default admin user");
             registerUser(defaultAdminEmail, defaultAdminPassword, defaultAdminName, true);
+            logger.info("Default admin user created successfully");
+        } else {
+            logger.debug("Admin user already exists");
         }
     }
 }
