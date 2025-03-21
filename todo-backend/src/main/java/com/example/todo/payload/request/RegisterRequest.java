@@ -1,4 +1,4 @@
-package com.example.todo.request;
+package com.example.todo.payload.request;
 
 import lombok.Data;
 

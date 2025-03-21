@@ -1,10 +1,11 @@
 package com.example.todo.controller;
 
 import com.example.todo.model.User;
-import com.example.todo.model.Subscription;
+import com.example.todo.model.Subscription.SubscriptionTier;
 import com.example.todo.service.UserService;
-import com.example.todo.repository.UserRepository;
-import lombok.Data;
+import com.example.todo.payload.request.CreateTenantRequest;
+import com.example.todo.payload.request.UpdateSubscriptionRequest;
+import com.example.todo.payload.response.TenantResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -18,16 +19,16 @@ import java.util.stream.Collectors;
 public class AdminController {
 
     private final UserService userService;
-    private final UserRepository userRepository;
 
-    public AdminController(UserService userService, UserRepository userRepository) {
+    public AdminController(UserService userService) {
         this.userService = userService;
-        this.userRepository = userRepository;
     }
 
     @GetMapping("/tenants")
     public ResponseEntity<List<TenantResponse>> getAllTenants() {
-        List<TenantResponse> tenants = userRepository.findAll().stream()
+        List<User> users = userService.getAllTenants();
+        
+        List<TenantResponse> tenants = users.stream()
             .map(user -> new TenantResponse(
                 user.getId(),
                 user.getEmail(),
@@ -76,37 +77,7 @@ public class AdminController {
 
     @DeleteMapping("/tenants/{id}")
     public ResponseEntity<?> deleteTenant(@PathVariable Long id) {
-        userRepository.deleteById(id);
+        userService.deleteTenant(id);
         return ResponseEntity.ok().build();
-    }
-}
-
-@Data
-class CreateTenantRequest {
-    private String email;
-    private String password;
-    private String name;
-    private Subscription.SubscriptionTier subscriptionTier;
-}
-
-@Data
-class UpdateSubscriptionRequest {
-    private Subscription.SubscriptionTier subscriptionTier;
-}
-
-@Data
-class TenantResponse {
-    private Long id;
-    private String email;
-    private String name;
-    private Subscription.SubscriptionTier subscriptionTier;
-    private boolean active;
-
-    public TenantResponse(Long id, String email, String name, Subscription.SubscriptionTier subscriptionTier, boolean active) {
-        this.id = id;
-        this.email = email;
-        this.name = name;
-        this.subscriptionTier = subscriptionTier;
-        this.active = active;
     }
 }

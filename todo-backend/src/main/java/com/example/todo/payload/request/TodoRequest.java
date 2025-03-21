@@ -1,4 +1,4 @@
-package com.example.todo.controller;
+package com.example.todo.payload.request;
 
 import lombok.Data;
 import java.time.LocalDateTime;

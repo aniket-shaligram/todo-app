@@ -1,4 +1,4 @@
-package com.example.todo.controller;
+package com.example.todo.payload.response;
 
 import com.example.todo.model.Subscription;
 import lombok.Data;

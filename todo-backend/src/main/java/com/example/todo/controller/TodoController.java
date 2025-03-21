@@ -6,7 +6,7 @@ import com.example.todo.model.Priority;
 import com.example.todo.model.Status;
 import com.example.todo.repository.TodoRepository;
 import com.example.todo.repository.UserRepository;
-import com.example.todo.request.TodoRequest;
+import com.example.todo.payload.request.TodoRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
