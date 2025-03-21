@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/todos")
+@RequestMapping("/api/todos")
 @CrossOrigin(origins = "${app.cors.allowed-origins}")
 public class TodoController {
 
