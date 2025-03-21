@@ -103,7 +103,7 @@ public class TodoController {
 
     @DeleteMapping("/{id}")
     @Transactional
-    public ResponseEntity<?> deleteTodo(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteTodo(@PathVariable Long id) {
         try {
             User currentUser = getCurrentUser();
             
@@ -113,7 +113,7 @@ public class TodoController {
             if (!todo.getUser().getId().equals(currentUser.getId())) {
                 return ResponseEntity.status(403).build();
             }
-            
+
             todoRepository.delete(todo);
             return ResponseEntity.ok().build();
         } catch (Exception e) {

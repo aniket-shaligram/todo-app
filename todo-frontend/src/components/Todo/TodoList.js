@@ -6,11 +6,16 @@ import {
   Menu,
   MenuItem,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
 import { config } from '../../config';
 import AddTodoDialog from './AddTodoDialog';
@@ -19,6 +24,7 @@ const TodoList = ({ tasks, setTasks, onLogout }) => {
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const handleMenuOpen = (event, task) => {
     event.stopPropagation();
@@ -80,6 +86,32 @@ const TodoList = ({ tasks, setTasks, onLogout }) => {
       handleMenuClose();
     } catch (error) {
       console.error('Failed to update task:', error);
+      if (error.response?.status === 403) {
+        onLogout();
+      }
+    }
+  };
+
+  const handleDeleteTask = async () => {
+    try {
+      const token = localStorage.getItem(config.AUTH_TOKEN_KEY);
+      if (!token) {
+        console.error('No auth token found');
+        onLogout();
+        return;
+      }
+
+      await axios.delete(`${config.TODOS_URL}/${selectedTask.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      setTasks(tasks.filter(t => t.id !== selectedTask.id));
+      handleMenuClose();
+      setDeleteConfirmOpen(false);
+    } catch (error) {
+      console.error('Failed to delete task:', error);
       if (error.response?.status === 403) {
         onLogout();
       }
@@ -184,6 +216,16 @@ const TodoList = ({ tasks, setTasks, onLogout }) => {
             Start Task
           </MenuItem>
         )}
+        <MenuItem 
+          onClick={() => {
+            handleMenuClose();
+            setDeleteConfirmOpen(true);
+          }}
+          sx={{ color: '#f44336' }}
+        >
+          <DeleteIcon sx={{ mr: 1 }} />
+          Delete Task
+        </MenuItem>
       </Menu>
 
       <AddTodoDialog
@@ -192,6 +234,30 @@ const TodoList = ({ tasks, setTasks, onLogout }) => {
         onAddTask={(newTask) => setTasks([...tasks, newTask])}
         onLogout={onLogout}
       />
+
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+      >
+        <DialogTitle>Delete Task</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete "{selectedTask?.title}"? This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteConfirmOpen(false)}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleDeleteTask}
+            color="error"
+            variant="contained"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };
