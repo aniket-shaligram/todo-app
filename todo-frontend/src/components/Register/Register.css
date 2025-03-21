@@ -1,0 +1,114 @@
+.register-container {
+  display: flex;
+  min-height: 100vh;
+  background: #FE5F55;
+  background-image: url('../../assets/pattern.svg');
+  background-size: 100px 100px;
+  background-repeat: repeat;
+  background-blend-mode: soft-light;
+}
+
+.register-form-container {
+  display: flex;
+  width: 100%;
+  max-width: 1200px;
+  margin: auto;
+  padding: 20px;
+}
+
+.register-illustration {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.register-illustration img {
+  max-width: 100%;
+  height: auto;
+}
+
+.register-form {
+  flex: 1;
+  background: white;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.register-title {
+  font-size: 32px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.input-field {
+  margin-bottom: 20px !important;
+}
+
+.input-field input {
+  padding: 15px;
+  border-radius: 8px;
+  background: #F8F8F8;
+}
+
+.input-field .MuiInputLabel-root {
+  transform: translate(14px, 16px) scale(1);
+}
+
+.input-field .MuiInputLabel-shrink {
+  transform: translate(14px, -6px) scale(0.75);
+}
+
+.register-button {
+  background-color: #FE5F55 !important;
+  color: white !important;
+  padding: 12px !important;
+  border-radius: 8px !important;
+  font-size: 16px !important;
+  text-transform: none !important;
+  margin-top: 20px !important;
+  margin-bottom: 20px !important;
+}
+
+.register-button:hover {
+  background-color: #e55149 !important;
+}
+
+.terms-checkbox {
+  margin-bottom: 20px;
+}
+
+.terms-checkbox .MuiFormControlLabel-label {
+  font-size: 14px;
+  color: #666;
+}
+
+.sign-in-link {
+  text-align: center;
+  color: #666;
+  text-decoration: none;
+}
+
+.sign-in-link a {
+  color: #FE5F55;
+  text-decoration: none;
+  font-weight: 500;
+  margin-left: 5px;
+}
+
+@media (max-width: 960px) {
+  .register-illustration {
+    display: none;
+  }
+  
+  .register-form {
+    margin: auto;
+    max-width: 500px;
+  }
+}
