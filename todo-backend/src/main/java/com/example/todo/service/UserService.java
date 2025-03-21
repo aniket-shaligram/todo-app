@@ -18,6 +18,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.BadCredentialsException;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService implements UserDetailsService {
@@ -189,6 +190,12 @@ public class UserService implements UserDetailsService {
         return userRepository.save(user);
     }
 
+    public List<User> getAllTenants() {
+        return userRepository.findAll().stream()
+                .filter(user -> !user.isAdmin())
+                .collect(Collectors.toList());
+    }
+
     public void createInitialAdminIfNeeded() {
         logger.debug("Checking if admin user needs to be created");
         
@@ -199,5 +206,19 @@ public class UserService implements UserDetailsService {
         } else {
             logger.debug("Admin user already exists");
         }
+    }
+
+    public void deleteTenant(Long id) {
+        logger.debug("Deleting tenant with id: {}", id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        if (user.isAdmin()) {
+            logger.error("Cannot delete admin user with id: {}", id);
+            throw new RuntimeException("Cannot delete admin user");
+        }
+        
+        userRepository.delete(user);
+        logger.info("Successfully deleted tenant with id: {}", id);
     }
 }

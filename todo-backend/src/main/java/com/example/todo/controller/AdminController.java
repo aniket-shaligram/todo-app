@@ -1,7 +1,6 @@
 package com.example.todo.controller;
 
 import com.example.todo.model.User;
-import com.example.todo.model.Subscription.SubscriptionTier;
 import com.example.todo.service.UserService;
 import com.example.todo.payload.request.CreateTenantRequest;
 import com.example.todo.payload.request.UpdateSubscriptionRequest;
