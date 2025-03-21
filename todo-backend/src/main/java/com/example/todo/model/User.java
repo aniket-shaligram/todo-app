@@ -29,6 +29,12 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String name;
     
+    @Column
+    private String contactNumber;
+    
+    @Column
+    private String position;
+    
     @Column(nullable = false)
     private boolean isAdmin = false;
     

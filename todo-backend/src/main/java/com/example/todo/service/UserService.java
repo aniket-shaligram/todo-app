@@ -100,6 +100,17 @@ public class UserService implements UserDetailsService {
         return userRepository.save(user);
     }
 
+    public User updateUser(User user) {
+        logger.debug("Updating user: {}", user.getEmail());
+        
+        if (!userRepository.existsById(user.getId())) {
+            logger.error("User not found: {}", user.getId());
+            throw new RuntimeException("User not found");
+        }
+        
+        return userRepository.save(user);
+    }
+
     public User getUserByEmail(String email) {
         logger.debug("Getting user by email: {}", email);
         return userRepository.findByEmail(email)
